@@ -21,7 +21,7 @@ from pyquaternion import Quaternion
 from tqdm import tqdm
 
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
-from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility
+from nuscenes.utils.geometry_utils import transform_matrix, view_points, box_in_image, BoxVisibility
 from nuscenes.utils.map_mask import MapMask
 
 PYTHON_VERSION = sys.version_info[0]
@@ -203,7 +203,7 @@ class NuScenes:
     def get_sample_data(self, sample_data_token: str,
                         box_vis_level: BoxVisibility = BoxVisibility.ANY,
                         selected_anntokens: List[str] = None,
-                        flat_vehicle_coordinates: bool = False) -> \
+                        use_flat_vehicle_coordinates: bool = False) -> \
             Tuple[str, List[Box], np.array]:
         """
         Returns the data path as well as all annotations related to that sample_data.
@@ -211,7 +211,7 @@ class NuScenes:
         :param sample_data_token: Sample_data token.
         :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
         :param selected_anntokens: If provided only return the selected annotation.
-        :param flat_vehicle_coordinates: Instead of current sensor's coordinate frame, use vehicle frame which is
+        :param use_flat_vehicle_coordinates: Instead of current sensor's coordinate frame, use vehicle frame which is
         aligned to z-plane in world
         :return: (data_path, boxes, camera_intrinsic <np.array: 3, 3>)
         """
@@ -240,10 +240,9 @@ class NuScenes:
         # Make list of Box objects including coord system transforms.
         box_list = []
         for box in boxes:
-            if flat_vehicle_coordinates:
+            if use_flat_vehicle_coordinates:
                 # Move box to ego vehicle coord system parallel to world z plane
-                ypr = Quaternion(pose_record['rotation']).yaw_pitch_roll
-                yaw = ypr[0]
+                yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
 
                 box.translate(-np.array(pose_record['translation']))
                 box.rotate(Quaternion(scalar=np.cos(yaw / 2), vector=[0, 0, np.sin(yaw / 2)]).inverse)
@@ -745,30 +744,32 @@ class NuScenesExplorer:
         sensor_modality = sd_record['sensor_modality']
 
         if sensor_modality == 'lidar':
-            # Get boxes in lidar frame.
+            # The lidar plot is centered around the ego vehicle in a top-down view.
+
+            # Get annotations in an ego vehicle centered frame.
             _, boxes, _ = self.nusc.get_sample_data(sample_data_token, box_vis_level=box_vis_level,
-                                                    flat_vehicle_coordinates=True)
+                                                    use_flat_vehicle_coordinates=True)
 
             # Get aggregated point cloud in lidar frame.
             sample_rec = self.nusc.get('sample', sd_record['sample_token'])
-            chan = sd_record['channel']
-            ref_chan = 'LIDAR_TOP'
-            pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
+            channel = sd_record['channel']
+            ref_channel = sd_record['channel']
+            pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan=channel, ref_chan=ref_channel,
+                                                             nsweeps=nsweeps)
 
-            # Compute transformation matrices for lidar point cloud
+            # Compute transformation matrices for lidar point cloud.
             cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
             pose_record = self.nusc.get('ego_pose', sd_record['ego_pose_token'])
-            vehicle_from_sensor = np.eye(4)
-            vehicle_from_sensor[:3, :3] = Quaternion(cs_record["rotation"]).rotation_matrix
-            vehicle_from_sensor[:3, 3] = cs_record['translation']
+            vehicle_from_sensor = transform_matrix(translation=cs_record['translation'],
+                                                   rotation=Quaternion(cs_record["rotation"]))
 
+            # Compute rotation between 3D vehicle pose and "flat" vehicle pose (parallel to global z plane).
             ego_yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
-            rot_vehicle_flat_from_vehicle = np.dot(
+            rotation_vehicle_flat_from_vehicle = np.dot(
                 Quaternion(scalar=np.cos(ego_yaw / 2), vector=[0, 0, np.sin(ego_yaw / 2)]).rotation_matrix,
                 Quaternion(pose_record['rotation']).inverse.rotation_matrix)
-
             vehicle_flat_from_vehicle = np.eye(4)
-            vehicle_flat_from_vehicle[:3, :3] = rot_vehicle_flat_from_vehicle
+            vehicle_flat_from_vehicle[:3, :3] = rotation_vehicle_flat_from_vehicle
 
             # Init axes.
             if ax is None:
@@ -805,9 +806,10 @@ class NuScenesExplorer:
 
             # Get aggregated point cloud in lidar frame.
             # The point cloud is transformed to the lidar frame for visualization purposes.
-            chan = sd_record['channel']
-            ref_chan = 'LIDAR_TOP'
-            pc, times = RadarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
+            channel = sd_record['channel']
+            ref_channel = 'LIDAR_TOP'
+            pc, times = RadarPointCloud.from_file_multisweep(self.nusc, sample_rec, channel, ref_channel,
+                                                             nsweeps=nsweeps)
 
             # Transform radar velocities (x is front, y is left), as these are not transformed when loading the point
             # cloud.
