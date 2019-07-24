@@ -191,7 +191,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes', help="Path where nuScenes is saved.")
     parser.add_argument('--version', type=str, default='v1.0-trainval', help='Dataset version.')
     parser.add_argument('--filename', type=str, default='image_annotations.json', help='Output filename.')
-    parser.add_argument('--visibilities', type=str, default=['1', '2', '3', '4'],
+    parser.add_argument('--visibilities', type=str, default=['','1', '2', '3', '4'],
                         help='Visibility bins, the higher the number the higher the visibility.', nargs='+')
     args = parser.parse_args()
 
