@@ -47,4 +47,4 @@ With [the schema](schema.md).
 
 # Data Exploration Tutorial
 
-To get started with the nuScenes devkit, run the tutorial using [Jupyter Notebook](notebooks/tutorial_lyft.ipynb).
+To get started with the Lyft Dataset SDK, run the tutorial using [Jupyter Notebook](notebooks/tutorial_lyft.ipynb).

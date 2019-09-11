@@ -35,7 +35,6 @@ input arguments:
 In general we would be interested in average of mAP at thresholds [0.5, 0.55, 0.6, 0.65,...0.95], similar to the
 standard COCO => one needs to run this file N times for every IOU threshold independently.
 
-
 """
 
 import argparse
@@ -57,6 +56,7 @@ class Box3D:
         size = kwargs["size"]
         rotation = kwargs["rotation"]
         name = kwargs["name"]
+        score = kwargs.get("score", -1)
 
         # Assert data for shape and NaNs.
         assert type(sample_token) == str, "Error: sample_token must be a string!"
@@ -77,6 +77,7 @@ class Box3D:
         self.translation = translation
         self.size = size
         self.volume = np.prod(self.size)
+        self.score = score
 
         assert np.all([x > 0 for x in size])
         self.rotation = rotation
@@ -197,6 +198,7 @@ class Box3D:
             "rotation": self.rotation,
             "name": self.name,
             "volume": self.volume,
+            "score": self.score,
         }
 
 
@@ -321,6 +323,68 @@ def recall_precision(gt, predictions, iou_threshold):
     return recalls, precisions, ap
 
 
+def get_average_precisions(gt: list, predictions: list, class_names: list, iou_threshold: float) -> np.array:
+    """Returns an array with an average precision per class.
+
+
+    Args:
+        gt: list of dictionaries in the format described below.
+        predictions: list of dictionaries in the format described below.
+        class_names: list of the class names.
+        iou_threshold: IOU threshold used to calculate TP / FN
+
+    Returns an array with an average precision per class.
+
+
+    Ground truth and predictions should have schema:
+
+    gt = [{
+    'sample_token': '0f0e3ce89d2324d8b45aa55a7b4f8207fbb039a550991a5149214f98cec136ac',
+    'translation': [974.2811881299899, 1714.6815014457964, -23.689857123368846],
+    'size': [1.796, 4.488, 1.664],
+    'rotation': [0.14882026466054782, 0, 0, 0.9888642620837121],
+    'name': 'car'
+    }]
+
+    predictions = [{
+        'sample_token': '0f0e3ce89d2324d8b45aa55a7b4f8207fbb039a550991a5149214f98cec136ac',
+        'translation': [971.8343488872263, 1713.6816097857359, -25.82534357061308],
+        'size': [2.519726579986132, 7.810161372666739, 3.483438286096803],
+        'rotation': [0.10913582721095375, 0.04099572636992043, 0.01927712319721745, 1.029328402625659],
+        'name': 'car',
+        'score': 0.3077029437237213
+    }]
+
+    """
+    assert 0 <= iou_threshold <= 1
+
+    gt_by_class_name = group_by_key(gt, "name")
+    pred_by_class_name = group_by_key(predictions, "name")
+
+    average_precisions = np.zeros(len(class_names))
+
+    for class_id, class_name in enumerate(class_names):
+        if class_name in pred_by_class_name:
+            recalls, precisions, average_precision = recall_precision(
+                gt_by_class_name[class_name], pred_by_class_name[class_name], iou_threshold
+            )
+            average_precisions[class_id] = average_precision
+
+    return average_precisions
+
+
+def get_class_names(gt: dict) -> list:
+    """Get sorted list of class names.
+
+    Args:
+        gt:
+
+    Returns: Sorted list of class names.
+
+    """
+    return sorted(list(set([x["name"] for x in gt])))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
@@ -339,22 +403,10 @@ if __name__ == "__main__":
     with open(args.gt_file) as f:
         gt = json.load(f)
 
-    gt_by_class_name = group_by_key(gt, "name")
-    pred_by_class_name = group_by_key(predictions, "name")
+    class_names = get_class_names(gt)
+    print("Class_names = ", class_names)
 
-    print(gt_by_class_name.keys())
-    print(pred_by_class_name.keys())
-
-    class_names = sorted(gt_by_class_name.keys())
-
-    average_precisions = np.zeros(len(class_names))
-
-    for class_id, class_name in enumerate(class_names):
-        if class_name in pred_by_class_name:
-            recalls, precisions, average_precision = recall_precision(
-                gt_by_class_name[class_name], pred_by_class_name[class_name], args.iou_threshold
-            )
-            average_precisions[class_id] = average_precision
+    average_precisions = get_average_precisions(gt, predictions, class_names, args.iou_threshold)
 
     mAP = np.mean(average_precisions)
     print("Average per class mean average precision = ", mAP)
