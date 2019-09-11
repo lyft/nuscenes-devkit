@@ -1,31 +1,50 @@
-# NuScenes Devkit - Lyft Level 5 AV Fork
+# Lyft Dataset SDK
 
-Welcome to the devkit for the [Lyft Level 5 AV dataset](https://level5.lyft.com/dataset/)! This devkit shall help you to visualise and explore our dataset. 
+Welcome to the devkit for the [Lyft Level 5 AV dataset](https://level5.lyft.com/dataset/)! This devkit shall help you to visualise and explore our dataset.
+
 
 ## Release Notes
-This devkit is a slightly modified version of the [nuScenes devkit](https://www.nuscenes.org). We added the following features:
-
-* support for coloured rasterised maps (instead of just binary masks)
-* render vehicle-centered top-down views with map in the background
-
-Some files from the original distribution which aren't directly related to the devkit are not part of this repository.
+This devkit is based on a version of the [nuScenes devkit](https://www.nuscenes.org).
 
 ## Getting Started
 
-### Devkit Setup
+### Installation
 
 If you have a Python >=3.6 environment set up and Pip installed, you can simply run
 ```
-pip install -r setup/requirements.txt
+pip install -U git+https://github.com/lyft/nuscenes-devkit
 ```
-to install the required packages. Then you're set up to use the devkit.
-
-For more detailed installation instructions, see `./setup/installation.md`
 
 ### Dataset Download
 Go to <https://level5.lyft.com/dataset/> to download the Lyft Level 5 AV Dataset.
 
-### Tutorial
-To get started with the nuScenes devkit, run the tutorial using [Jupyter Notebook](https://jupyter.org/):
+### Tutorial and Reference Model
+Check out the [tutorial and reference model README](notebooks/README.md).
 
-   ```jupyter notebook python-sdk/tutorial_lyft.ipynb```
+![](notebooks/media/001.gif)
+
+
+# Dataset structure
+
+The dataset contains of json files:
+
+1. `scene.json` - 25-45 seconds snippet of a car's journey.
+2. `sample.json` - An annotated snapshot of a scene at a particular timestamp.
+3. `sample_data.json` - Data collected from a particular sensor.
+4. `sample_annotation.json` - An annotated instance of an object within our interest.
+5. `instance.json` - Enumeration of all object instance we observed.
+6. `category.json` - Taxonomy of object categories (e.g. vehicle, human).
+7. `attribute.json` - Property of an instance that can change while the category remains the same.
+8. `visibility.json` - (currently not used)
+9. `sensor.json` - A specific sensor type.
+10. `calibrated_sensor.json` - Definition of a particular sensor as calibrated on a particular vehicle.
+11. `ego_pose.json` - Ego vehicle poses at a particular timestamp.
+12. `log.json` - Log information from which the data was extracted.
+13. `map.json` - Map data that is stored as binary semantic masks from a top-down view.
+
+
+With [the schema](schema.md).
+
+# Data Exploration Tutorial
+
+To get started with the nuScenes devkit, run the tutorial using [Jupyter Notebook](notebooks/tutorial_lyft.ipynb).
