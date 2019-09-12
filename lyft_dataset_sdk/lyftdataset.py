@@ -20,9 +20,9 @@ from matplotlib.axes import Axes
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
-from nuscenesdevkit.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
-from nuscenesdevkit.utils.geometry_utils import view_points, box_in_image, BoxVisibility
-from nuscenesdevkit.utils.map_mask import MapMask
+from lyft_dataset_sdk.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
+from lyft_dataset_sdk.utils.geometry_utils import view_points, box_in_image, BoxVisibility
+from lyft_dataset_sdk.utils.map_mask import MapMask
 from pathlib import Path
 
 PYTHON_VERSION = sys.version_info[0]
@@ -1210,7 +1210,7 @@ class LyftDatasetExplorer:
                     # Load and render
                     if not image_path.exists():
                         raise Exception("Error: Missing image %s" % image_path)
-                    im = cv2.imread(image_path)
+                    im = cv2.imread(str(image_path))
                     for box in boxes:
                         c = self.get_color(box.name)
                         box.render_cv2(im, view=camera_intrinsic, normalize=True, colors=(c, c, c))
@@ -1306,7 +1306,7 @@ class LyftDatasetExplorer:
             # Load and render
             if not image_path.exists():
                 raise Exception("Error: Missing image %s" % image_path)
-            image = cv2.imread(image_path)
+            image = cv2.imread(str(image_path))
             for box in boxes:
                 c = self.get_color(box.name)
                 box.render_cv2(image, view=camera_intrinsic, normalize=True, colors=(c, c, c))
