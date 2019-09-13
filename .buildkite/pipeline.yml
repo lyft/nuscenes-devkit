@@ -1,0 +1,16 @@
+steps:
+  - label: lint
+    agents:
+      lyft:fleet:buildkite: cpu
+    command:
+      - sudo python3.6 -m pip install -r requirements.txt
+      - black --check .
+      - flake8 .
+
+  - label: test
+    agents:
+      lyft:fleet:buildkite: cpu
+    command:
+      - sudo python3.6 -m pip install -r requirements.txt
+      - sudo python3.6 -m pip install -e .
+      - pytest tests
