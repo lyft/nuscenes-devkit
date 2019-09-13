@@ -10,13 +10,22 @@ This devkit is based on a version of the [nuScenes devkit](https://www.nuscenes.
 
 ### Installation
 
-If you have a Python >=3.6 environment set up and Pip installed, you can simply run
+You can use pip to install [lyft-dataset-sdk](https://pypi.org/project/lyft-dataset-sdk/):
+```bash
+pip install -U lyft_dataset_sdk
 ```
+
+If you want to get the latest version of the code before it is released on PyPI you can install the library from GitHub:
+
+```bash
 pip install -U git+https://github.com/lyft/nuscenes-devkit
 ```
 
 ### Dataset Download
 Go to <https://level5.lyft.com/dataset/> to download the Lyft Level 5 AV Dataset.
+
+
+The dataset is also availible as a part of the [Lyft 3D Object Detection for Autonomous Vehicles Challenge](https://www.kaggle.com/c/3d-object-detection-for-autonomous-vehicles).
 
 ### Tutorial and Reference Model
 Check out the [tutorial and reference model README](notebooks/README.md).
