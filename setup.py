@@ -10,7 +10,7 @@ DESCRIPTION = "SDK for Lyft dataset."
 URL = "https://github.com/lyft/nuscenes-devkit"
 AUTHOR = "Vladimir Iglovikov"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "0.0.4"
+VERSION = "0.0.5"
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -96,7 +96,6 @@ setup(
     install_requires=REQUIRED,
     extras_require=EXTRAS,
     classifiers=[
-        "License :: OSI Approved :: MIT License",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Operating System :: OS Independent",
