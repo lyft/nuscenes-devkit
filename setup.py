@@ -7,11 +7,10 @@ from setuptools import setup, find_packages, Command
 # Package meta-data.
 NAME = "lyft_dataset_sdk"
 DESCRIPTION = "SDK for Lyft dataset."
-URL = ""
-EMAIL = "viglovikov@lyft.com"
+URL = "https://github.com/lyft/nuscenes-devkit"
 AUTHOR = "Vladimir Iglovikov"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -91,8 +90,7 @@ setup(
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
     author=AUTHOR,
-    author_email=EMAIL,
-    license="MIT",
+    license="Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)",
     url=URL,
     packages=find_packages(exclude=["tests", "docs", "images"]),
     install_requires=REQUIRED,
