@@ -9,21 +9,21 @@ import os
 import sys
 import time
 from datetime import datetime
-from typing import Tuple, List
+from pathlib import Path
+from typing import List, Tuple
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import sklearn.metrics
-from PIL import Image
 from matplotlib.axes import Axes
+from PIL import Image
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
-from lyft_dataset_sdk.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
-from lyft_dataset_sdk.utils.geometry_utils import view_points, box_in_image, BoxVisibility
+from lyft_dataset_sdk.utils.data_classes import Box, LidarPointCloud, RadarPointCloud  # NOQA
+from lyft_dataset_sdk.utils.geometry_utils import BoxVisibility, box_in_image, view_points  # NOQA
 from lyft_dataset_sdk.utils.map_mask import MapMask
-from pathlib import Path
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -1180,7 +1180,7 @@ class LyftDatasetExplorer:
         canvas = np.ones((2 * image_size[1], 3 * image_size[0], 3), np.uint8)
         if out_path is not None:
             fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-            out = cv2.VideoWriter(out_path, fourcc, freq, canvas.shape[1::-1])
+            out = cv2.VideoWriter(str(out_path), fourcc, freq, canvas.shape[1::-1])
         else:
             out = None
 
@@ -1291,7 +1291,7 @@ class LyftDatasetExplorer:
 
         if out_path is not None:
             fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-            out = cv2.VideoWriter(out_path, fourcc, freq, image_size)
+            out = cv2.VideoWriter(str(out_path), fourcc, freq, image_size)
         else:
             out = None
 
@@ -1435,5 +1435,5 @@ class LyftDatasetExplorer:
         plt.rcParams["figure.facecolor"] = "white"  # Reset for future plots
 
         if out_path is not None:
-            plt.savefig(out_path)
+            plt.savefig(str(out_path))
             plt.close("all")
