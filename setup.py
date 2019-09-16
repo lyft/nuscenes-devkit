@@ -2,7 +2,8 @@ import io
 import os
 import sys
 from shutil import rmtree
-from setuptools import setup, find_packages, Command
+
+from setuptools import Command, find_packages, setup
 
 # Package meta-data.
 NAME = "lyft_dataset_sdk"
@@ -10,7 +11,7 @@ DESCRIPTION = "SDK for Lyft dataset."
 URL = "https://github.com/lyft/nuscenes-devkit"
 AUTHOR = "Vladimir Iglovikov"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "0.0.5"
+VERSION = "0.0.6"
 
 here = os.path.abspath(os.path.dirname(__file__))
 
