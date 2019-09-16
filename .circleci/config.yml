@@ -1,0 +1,20 @@
+version: 2.0
+
+jobs:
+  Python_3.6:
+      docker:
+        - image: circleci/python:3.6
+      steps:
+        - checkout
+        - run: sudo pip install -r requirements.txt
+        - run: python --version ; pip --version ; pwd ; ls
+        - run: black . --check
+        - run: flake8 . --count --statistics
+        - run: sudo pip install -e .
+        - run: pytest
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - Python_3.6
