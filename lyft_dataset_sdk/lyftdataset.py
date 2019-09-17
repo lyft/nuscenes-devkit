@@ -1062,8 +1062,7 @@ class LyftDatasetExplorer:
 
         fig, axes = plt.subplots(1, 2, figsize=(18, 9))
 
-        # Figure out which camera the object is fully visible in (this may return nothing)
-        boxes, cam = [], []
+        # Figure out which camera the object is visible in, with the given `box_vis_level` (this may return nothing)
         cams = [key for key in sample_record["data"].keys() if "CAM" in key]
         for cam in cams:
             _, boxes, _ = self.lyftd.get_sample_data(
@@ -1080,14 +1079,15 @@ class LyftDatasetExplorer:
         lidar = sample_record["data"]["LIDAR_TOP"]
         data_path, boxes, camera_intrinsic = self.lyftd.get_sample_data(lidar, selected_anntokens=[ann_token])
         LidarPointCloud.from_file(data_path).render_height(axes[0], view=view)
-        for box in boxes:
-            c = np.array(self.get_color(box.name)) / 255.0
-            box.render(axes[0], view=view, colors=(c, c, c))
-            corners = view_points(boxes[0].corners(), view, False)[:2, :]
-            axes[0].set_xlim([np.min(corners[0, :]) - margin, np.max(corners[0, :]) + margin])
-            axes[0].set_ylim([np.min(corners[1, :]) - margin, np.max(corners[1, :]) + margin])
-            axes[0].axis("off")
-            axes[0].set_aspect("equal")
+        box = boxes[0]
+        c = np.array(self.get_color(box.name)) / 255.0
+        box.render(axes[0], view=view, colors=(c, c, c))
+        corners = view_points(box.corners(), view, False)[:2, :]
+        axes[0].set_xlim([np.min(corners[0, :]) - margin, np.max(corners[0, :]) + margin])
+        axes[0].set_ylim([np.min(corners[1, :]) - margin, np.max(corners[1, :]) + margin])
+        axes[0].set_title("LIDAR_TOP")
+        axes[0].axis("off")
+        axes[0].set_aspect("equal")
 
         # Plot CAMERA view
         data_path, boxes, camera_intrinsic = self.lyftd.get_sample_data(cam, selected_anntokens=[ann_token])
@@ -1096,9 +1096,9 @@ class LyftDatasetExplorer:
         axes[1].set_title(self.lyftd.get("sample_data", cam)["channel"])
         axes[1].axis("off")
         axes[1].set_aspect("equal")
-        for box in boxes:
-            c = np.array(self.get_color(box.name)) / 255.0
-            box.render(axes[1], view=camera_intrinsic, normalize=True, colors=(c, c, c))
+        box = boxes[0]
+        c = np.array(self.get_color(box.name)) / 255.0
+        box.render(axes[1], view=camera_intrinsic, normalize=True, colors=(c, c, c))
 
         if out_path is not None:
             plt.savefig(out_path)
