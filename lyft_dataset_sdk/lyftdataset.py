@@ -34,7 +34,14 @@ if not PYTHON_VERSION == 3:
 class LyftDataset:
     """Database class for Lyft Dataset to help query and retrieve information from the database."""
 
-    def __init__(self, data_path: str, json_path: str, verbose: bool = True, map_resolution: float = 0.1, missing_tables_ok = False):
+    def __init__(
+        self,
+        data_path: str,
+        json_path: str,
+        verbose: bool = True,
+        map_resolution: float = 0.1,
+        missing_tables_ok=False,
+    ):
         """Loads database and creates reverse indexes and shortcuts.
 
         Args:
@@ -97,7 +104,7 @@ class LyftDataset:
 
     def __load_table__(self, table_name, verbose=False, missing_ok=False) -> dict:
         """Loads a table."""
-        filepath = str(self.json_path.joinpath("{}.json".format(table_name))) 
+        filepath = str(self.json_path.joinpath("{}.json".format(table_name)))
 
         if not os.path.isfile(filepath) and missing_ok:
             if verbose:
