@@ -40,7 +40,6 @@ class LyftDataset:
         json_path: str,
         verbose: bool = True,
         map_resolution: float = 0.1,
-        missing_tables_ok=False,
     ):
         """Loads database and creates reverse indexes and shortcuts.
 
@@ -73,19 +72,19 @@ class LyftDataset:
         start_time = time.time()
 
         # Explicitly assign tables to help the IDE determine valid class members.
-        self.category = self.__load_table__("category", verbose, missing_tables_ok)
-        self.attribute = self.__load_table__("attribute", verbose, missing_tables_ok)
-        self.visibility = self.__load_table__("visibility", verbose, missing_tables_ok)
-        self.instance = self.__load_table__("instance", verbose, missing_tables_ok)
-        self.sensor = self.__load_table__("sensor", verbose, missing_tables_ok)
-        self.calibrated_sensor = self.__load_table__("calibrated_sensor", verbose, missing_tables_ok)
-        self.ego_pose = self.__load_table__("ego_pose", verbose, missing_tables_ok)
-        self.log = self.__load_table__("log", verbose, missing_tables_ok)
-        self.scene = self.__load_table__("scene", verbose, missing_tables_ok)
-        self.sample = self.__load_table__("sample", verbose, missing_tables_ok)
-        self.sample_data = self.__load_table__("sample_data", verbose, missing_tables_ok)
-        self.sample_annotation = self.__load_table__("sample_annotation", verbose, missing_tables_ok)
-        self.map = self.__load_table__("map", verbose, missing_tables_ok)
+        self.category = self.__load_table__("category", verbose)
+        self.attribute = self.__load_table__("attribute", verbose)
+        self.visibility = self.__load_table__("visibility", verbose)
+        self.instance = self.__load_table__("instance", verbose, missing_ok=True)
+        self.sensor = self.__load_table__("sensor", verbose)
+        self.calibrated_sensor = self.__load_table__("calibrated_sensor", verbose)
+        self.ego_pose = self.__load_table__("ego_pose", verbose)
+        self.log = self.__load_table__("log", verbose)
+        self.scene = self.__load_table__("scene", verbose)
+        self.sample = self.__load_table__("sample", verbose)
+        self.sample_data = self.__load_table__("sample_data", verbose)
+        self.sample_annotation = self.__load_table__("sample_annotation", verbose, missing_ok=True)
+        self.map = self.__load_table__("map", verbose)
 
         # Initialize map mask for each map record.
         for map_record in self.map:
@@ -108,8 +107,8 @@ class LyftDataset:
 
         if not os.path.isfile(filepath) and missing_ok:
             if verbose:
-                print("JSON file {}.json missing, replacing table with empty dict".format(table_name))
-            return {}
+                print("JSON file {}.json missing, using empty list".format(table_name))
+            return []
 
         with open(filepath) as f:
             table = json.load(f)
