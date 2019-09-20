@@ -2,7 +2,7 @@
 
 1. Fork the repository.
 2. Clone it 
-3. Install pre-commit hook:
+3. Install pre-commit hook. Run from a folder with repository: 
 ```bash
 pip install pre-commit
 pre-commit install
