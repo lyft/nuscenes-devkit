@@ -57,3 +57,8 @@ With [the schema](schema.md).
 # Data Exploration Tutorial
 
 To get started with the Lyft Dataset SDK, run the tutorial using [Jupyter Notebook](notebooks/tutorial_lyft.ipynb).
+
+# Contributing
+We would be happy to accept issue reports and pull requests from the community.
+
+For creating pull requests follow our [contributing guide](docs/CONTRIBUTING.md). 
