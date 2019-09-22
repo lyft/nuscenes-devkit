@@ -1281,6 +1281,8 @@ class LyftDatasetExplorer:
             freq: Display frequency (Hz).
             image_size: Size of image to render. The larger the slower this will run.
             out_path: Optional path to write a video file of the rendered frames.
+            interactive: show video in a cv2 window (True by default).
+            verbose: set to True to print currently processed token.
 
         """
 
