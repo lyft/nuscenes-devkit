@@ -11,7 +11,7 @@ DESCRIPTION = "SDK for Lyft dataset."
 URL = "https://github.com/lyft/nuscenes-devkit"
 AUTHOR = "Vladimir Iglovikov"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "0.0.7"
+VERSION = "0.0.8"
 
 here = os.path.abspath(os.path.dirname(__file__))
 

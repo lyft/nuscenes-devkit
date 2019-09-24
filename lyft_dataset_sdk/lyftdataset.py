@@ -34,13 +34,7 @@ if not PYTHON_VERSION == 3:
 class LyftDataset:
     """Database class for Lyft Dataset to help query and retrieve information from the database."""
 
-    def __init__(
-        self,
-        data_path: str,
-        json_path: str,
-        verbose: bool = True,
-        map_resolution: float = 0.1,
-    ):
+    def __init__(self, data_path: str, json_path: str, verbose: bool = True, map_resolution: float = 0.1):
         """Loads database and creates reverse indexes and shortcuts.
 
         Args:
