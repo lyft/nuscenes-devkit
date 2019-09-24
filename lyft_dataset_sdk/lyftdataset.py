@@ -533,9 +533,13 @@ class LyftDataset:
         verbose: bool = False,
     ) -> None:
         self.explorer.render_scene_channel(
-            scene_token=scene_token, channel=channel, freq=freq,
-            image_size=imsize, out_path=out_path,
-            interactive=interactive, verbose=verbose,
+            scene_token=scene_token,
+            channel=channel,
+            freq=freq,
+            image_size=imsize,
+            out_path=out_path,
+            interactive=interactive,
+            verbose=verbose,
         )
 
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None, out_path: str = None) -> None:
@@ -1308,8 +1312,7 @@ class LyftDatasetExplorer:
 
         # Open CV init
         if interactive:
-            name = "{}: {} (Space to pause, ESC to exit)".format(
-                scene_rec["name"], channel)
+            name = "{}: {} (Space to pause, ESC to exit)".format(scene_rec["name"], channel)
             cv2.namedWindow(name)
             cv2.moveWindow(name, 0, 0)
 
@@ -1322,7 +1325,7 @@ class LyftDatasetExplorer:
         has_more_frames = True
         while has_more_frames:
             if verbose:
-                print(sd_rec['token'])
+                print(sd_rec["token"])
 
             # Get data from DB
             image_path, boxes, camera_intrinsic = self.lyftd.get_sample_data(
