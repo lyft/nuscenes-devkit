@@ -9,21 +9,21 @@ import os
 import sys
 import time
 from datetime import datetime
-from typing import Tuple, List
+from pathlib import Path
+from typing import List, Tuple
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import sklearn.metrics
-from PIL import Image
 from matplotlib.axes import Axes
+from PIL import Image
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
-from lyft_dataset_sdk.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
-from lyft_dataset_sdk.utils.geometry_utils import view_points, box_in_image, BoxVisibility
+from lyft_dataset_sdk.utils.data_classes import Box, LidarPointCloud, RadarPointCloud  # NOQA
+from lyft_dataset_sdk.utils.geometry_utils import BoxVisibility, box_in_image, view_points  # NOQA
 from lyft_dataset_sdk.utils.map_mask import MapMask
-from pathlib import Path
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -66,19 +66,19 @@ class LyftDataset:
         start_time = time.time()
 
         # Explicitly assign tables to help the IDE determine valid class members.
-        self.category = self.__load_table__("category")
-        self.attribute = self.__load_table__("attribute")
-        self.visibility = self.__load_table__("visibility")
-        self.instance = self.__load_table__("instance")
-        self.sensor = self.__load_table__("sensor")
-        self.calibrated_sensor = self.__load_table__("calibrated_sensor")
-        self.ego_pose = self.__load_table__("ego_pose")
-        self.log = self.__load_table__("log")
-        self.scene = self.__load_table__("scene")
-        self.sample = self.__load_table__("sample")
-        self.sample_data = self.__load_table__("sample_data")
-        self.sample_annotation = self.__load_table__("sample_annotation")
-        self.map = self.__load_table__("map")
+        self.category = self.__load_table__("category", verbose)
+        self.attribute = self.__load_table__("attribute", verbose)
+        self.visibility = self.__load_table__("visibility", verbose)
+        self.instance = self.__load_table__("instance", verbose, missing_ok=True)
+        self.sensor = self.__load_table__("sensor", verbose)
+        self.calibrated_sensor = self.__load_table__("calibrated_sensor", verbose)
+        self.ego_pose = self.__load_table__("ego_pose", verbose)
+        self.log = self.__load_table__("log", verbose)
+        self.scene = self.__load_table__("scene", verbose)
+        self.sample = self.__load_table__("sample", verbose)
+        self.sample_data = self.__load_table__("sample_data", verbose)
+        self.sample_annotation = self.__load_table__("sample_annotation", verbose, missing_ok=True)
+        self.map = self.__load_table__("map", verbose)
 
         # Initialize map mask for each map record.
         for map_record in self.map:
@@ -94,10 +94,18 @@ class LyftDataset:
 
         # Initialize LyftDatasetExplorer class
         self.explorer = LyftDatasetExplorer(self)
+        
 
-    def __load_table__(self, table_name) -> dict:
+    def __load_table__(self, table_name, verbose=False, missing_ok=False) -> dict:
         """Loads a table."""
-        with open(str(self.json_path.joinpath("{}.json".format(table_name)))) as f:
+        filepath = str(self.json_path.joinpath("{}.json".format(table_name)))
+
+        if not os.path.isfile(filepath) and missing_ok:
+            if verbose:
+                print("JSON file {}.json missing, using empty list".format(table_name))
+            return []
+
+        with open(filepath) as f:
             table = json.load(f)
         return table
 
@@ -514,14 +522,108 @@ class LyftDataset:
         channel: str = "CAM_FRONT",
         freq: float = 10,
         imsize: Tuple[float, float] = (640, 360),
-        out_path: str = None,
+        out_path: Path = None,
+        interactive: bool = True,
+        verbose: bool = False,
     ) -> None:
         self.explorer.render_scene_channel(
-            scene_token=scene_token, channel=channel, freq=freq, image_size=imsize, out_path=out_path
+            scene_token=scene_token,
+            channel=channel,
+            freq=freq,
+            image_size=imsize,
+            out_path=out_path,
+            interactive=interactive,
+            verbose=verbose,
         )
 
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None, out_path: str = None) -> None:
         self.explorer.render_egoposes_on_map(log_location, scene_tokens, out_path=out_path)
+        
+        
+    def render_sample_3d_interactive(
+        self, 
+        sample_id: str,
+        render_sample: bool = True
+    ) -> None:
+        """Render 3D visualization of the sample using plotly
+
+        Args:
+            sample_id: Unique sample identifier.
+            render_sample: call self.render_sample (Render all LIDAR and camera sample_data in sample along with annotations.)
+
+        """
+        import pandas as pd
+        import plotly.graph_objects as go
+        
+        sample = self.get('sample', sample_id)
+        sample_data = self.get(
+            'sample_data', 
+            sample['data']['LIDAR_TOP']
+        )
+        pc = LidarPointCloud.from_file(
+            Path(os.path.join(str(self.data_path),
+                              sample_data['filename']))
+        )
+        _, boxes, _ = self.get_sample_data(
+            sample['data']['LIDAR_TOP'], flat_vehicle_coordinates=False
+        )
+
+        if render_sample:
+            self.render_sample(sample_id)
+
+        df_tmp = pd.DataFrame(pc.points[:3, :].T, columns=['x', 'y', 'z'])
+        df_tmp['norm'] = np.sqrt(np.power(df_tmp[['x', 'y', 'z']].values, 2).sum(axis=1))
+        scatter = go.Scatter3d(
+            x=df_tmp['x'],
+            y=df_tmp['y'],
+            z=df_tmp['z'],
+            mode='markers',
+            marker=dict(
+                size=1,
+                color=df_tmp['norm'],
+                opacity=0.8
+            )
+        )
+
+        x_lines = []
+        y_lines = []
+        z_lines = []
+
+        def f_lines_add_nones():
+            x_lines.append(None)
+            y_lines.append(None)
+            z_lines.append(None)
+
+        ixs_box_0 = [0, 1, 2, 3, 0]
+        ixs_box_1 = [4, 5, 6, 7, 4]
+
+        for box in boxes:
+            points = view_points(box.corners(), view=np.eye(3), normalize=False)
+            x_lines.extend(points[0, ixs_box_0])
+            y_lines.extend(points[1, ixs_box_0])
+            z_lines.extend(points[2, ixs_box_0])    
+            f_lines_add_nones()
+            x_lines.extend(points[0, ixs_box_1])
+            y_lines.extend(points[1, ixs_box_1])
+            z_lines.extend(points[2, ixs_box_1])
+            f_lines_add_nones()
+            for i in range(4):
+                x_lines.extend(points[0, [ixs_box_0[i], ixs_box_1[i]]])
+                y_lines.extend(points[1, [ixs_box_0[i], ixs_box_1[i]]])
+                z_lines.extend(points[2, [ixs_box_0[i], ixs_box_1[i]]])
+                f_lines_add_nones()
+
+        lines = go.Scatter3d(
+            x=x_lines,
+            y=y_lines,
+            z=z_lines,
+            mode='lines',
+            name='lines'
+        )
+
+        fig = go.Figure(data=[scatter, lines])
+        fig.update_layout(scene_aspectmode='data')
+        fig.show()
 
 
 class LyftDatasetExplorer:
@@ -1180,7 +1282,7 @@ class LyftDatasetExplorer:
         canvas = np.ones((2 * image_size[1], 3 * image_size[0], 3), np.uint8)
         if out_path is not None:
             fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-            out = cv2.VideoWriter(out_path, fourcc, freq, canvas.shape[1::-1])
+            out = cv2.VideoWriter(str(out_path), fourcc, freq, canvas.shape[1::-1])
         else:
             out = None
 
@@ -1252,6 +1354,8 @@ class LyftDatasetExplorer:
         freq: float = 10,
         image_size: Tuple[float, float] = (640, 360),
         out_path: Path = None,
+        interactive: bool = True,
+        verbose: bool = False,
     ) -> None:
         """Renders a full scene for a particular camera channel.
 
@@ -1261,6 +1365,8 @@ class LyftDatasetExplorer:
             freq: Display frequency (Hz).
             image_size: Size of image to render. The larger the slower this will run.
             out_path: Optional path to write a video file of the rendered frames.
+            interactive: show video in a cv2 window (True by default).
+            verbose: set to True to print currently processed token.
 
         """
 
@@ -1285,18 +1391,21 @@ class LyftDatasetExplorer:
         sd_rec = self.lyftd.get("sample_data", sample_rec["data"][channel])
 
         # Open CV init
-        name = "{}: {} (Space to pause, ESC to exit)".format(scene_rec["name"], channel)
-        cv2.namedWindow(name)
-        cv2.moveWindow(name, 0, 0)
+        if interactive:
+            name = "{}: {} (Space to pause, ESC to exit)".format(scene_rec["name"], channel)
+            cv2.namedWindow(name)
+            cv2.moveWindow(name, 0, 0)
 
         if out_path is not None:
             fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-            out = cv2.VideoWriter(out_path, fourcc, freq, image_size)
+            out = cv2.VideoWriter(str(out_path), fourcc, freq, image_size)
         else:
             out = None
 
         has_more_frames = True
         while has_more_frames:
+            if verbose:
+                print(sd_rec["token"])
 
             # Get data from DB
             image_path, boxes, camera_intrinsic = self.lyftd.get_sample_data(
@@ -1313,7 +1422,8 @@ class LyftDatasetExplorer:
 
             # Render
             image = cv2.resize(image, image_size)
-            cv2.imshow(name, image)
+            if interactive:
+                cv2.imshow(name, image)
             if out_path is not None:
                 out.write(image)
 
@@ -1330,7 +1440,8 @@ class LyftDatasetExplorer:
             else:
                 has_more_frames = False
 
-        cv2.destroyAllWindows()
+        if interactive:
+            cv2.destroyAllWindows()
         if out_path is not None:
             out.release()
 
@@ -1435,5 +1546,5 @@ class LyftDatasetExplorer:
         plt.rcParams["figure.facecolor"] = "white"  # Reset for future plots
 
         if out_path is not None:
-            plt.savefig(out_path)
+            plt.savefig(str(out_path))
             plt.close("all")

@@ -12,3 +12,5 @@ fire
 pytest
 black
 matplotlib
+pandas
+plotly

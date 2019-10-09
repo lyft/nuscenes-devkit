@@ -10,13 +10,20 @@ This devkit is based on a version of the [nuScenes devkit](https://www.nuscenes.
 
 ### Installation
 
-If you have a Python >=3.6 environment set up and Pip installed, you can simply run
+You can use pip to install [lyft-dataset-sdk](https://pypi.org/project/lyft-dataset-sdk/):
+```bash
+pip install -U lyft_dataset_sdk
 ```
+
+If you want to get the latest version of the code before it is released on PyPI you can install the library from GitHub:
+
+```bash
 pip install -U git+https://github.com/lyft/nuscenes-devkit
 ```
 
 ### Dataset Download
 Go to <https://level5.lyft.com/dataset/> to download the Lyft Level 5 AV Dataset.
+The dataset is also availible as a part of the [Lyft 3D Object Detection for Autonomous Vehicles Challenge](https://www.kaggle.com/c/3d-object-detection-for-autonomous-vehicles).
 
 ### Utils for converting LEVEL5 data into Kitti format
 Simply run<br />`python -m lyft_dataset_sdk.utils.export_kitti nuscenes_gt_to_kitti --lyft_dataroot ${DS_PTH} --table_folder ${TBL_PTH}`<br />for converting data.<br />See help ( `python -m lyft_dataset_sdk.utils.export_kitti nuscenes_gt_to_kitti --help` ) for more information.<br />You can draw results after converting with utils:<br />`python -m lyft_dataset_sdk.utils.export_kitti render_kitti`
@@ -51,3 +58,8 @@ With [the schema](schema.md).
 # Data Exploration Tutorial
 
 To get started with the Lyft Dataset SDK, run the tutorial using [Jupyter Notebook](notebooks/tutorial_lyft.ipynb).
+
+# Contributing
+We would be happy to accept issue reports and pull requests from the community.
+
+For creating pull requests follow our [contributing guide](docs/CONTRIBUTING.md). 
