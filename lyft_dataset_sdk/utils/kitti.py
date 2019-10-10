@@ -159,7 +159,7 @@ class KittiDB:
 
         filepath = root.joinpath(table, '{}.{}'.format(token, ending))
 
-        return filepath
+        return str(filepath)
 
     @staticmethod
     def get_transforms(token: str, root: Path) -> dict:
@@ -451,7 +451,7 @@ class KittiDB:
             im = Image.open(im_path)
 
             if ax is None:
-                _, ax = plt.subplots(1, 1, figsize=(9, 16))
+                _, ax = plt.subplots(1, 1, figsize=(16, 9))
 
             if not augment_previous:
                 ax.imshow(im)
