@@ -205,7 +205,7 @@ class KittiDB:
         :param root: Base folder for all KITTI data.
         :return: LidarPointCloud for the sample in the KITTI Lidar frame.
         """
-        pc_filename = KittiDB.get_filepath(token, 'velodyne', root=root)
+        pc_filename = str(KittiDB.get_filepath(token, 'velodyne', root=root))
 
         # The lidar PC is stored in the KITTI LIDAR coord system.
         pc = LidarPointCloud(np.fromfile(pc_filename, dtype=np.float32).reshape(-1, 4).T)
