@@ -111,7 +111,10 @@ class KittiConverter:
         )
         for cam_name in self.cams_to_see:
             cam_front_token = sample['data'][cam_name]
-            token_to_write = cam_front_token
+            if self.get_all_detections:
+                token_to_write = sample_token
+            else:
+                token_to_write = cam_front_token
 
             # Retrieve sensor records.
             sd_record_cam = self.lyft_ds.get('sample_data', cam_front_token)
