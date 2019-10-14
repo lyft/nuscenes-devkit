@@ -48,7 +48,7 @@ from shapely.geometry import Polygon
 
 
 class Box3D:
-    """ Data class used during detection evaluation. Can be a prediction or ground truth."""
+    """Data class used during detection evaluation. Can be a prediction or ground truth."""
 
     def __init__(self, **kwargs):
         sample_token = kwargs["sample_token"]
@@ -58,19 +58,29 @@ class Box3D:
         name = kwargs["name"]
         score = kwargs.get("score", -1)
 
-        # Assert data for shape and NaNs.
-        assert type(sample_token) == str, "Error: sample_token must be a string!"
+        if not isinstance(sample_token, str):
+            raise TypeError("Sample_token must be a string!")
 
-        assert len(translation) == 3, "Error: Translation must have 3 elements!"
-        assert not np.any(np.isnan(translation)), "Error: Translation may not be NaN!"
+        if not len(translation) == 3:
+            raise ValueError("Translation must have 3 elements!")
 
-        assert len(size) == 3, "Error: Size must have 3 elements!"
-        assert not np.any(np.isnan(size)), "Error: Size may not be NaN!"
+        if np.any(np.isnan(translation)):
+            raise ValueError("Translation may not be NaN!")
 
-        assert len(rotation) == 4, "Error: Rotation must have 4 elements!"
-        assert not np.any(np.isnan(rotation)), "Error: Rotation may not be NaN!"
+        if not len(size) == 3:
+            raise ValueError("Size must have 3 elements!")
 
-        assert name is not None, "Error: detection_name cannot be empty!"
+        if np.any(np.isnan(size)):
+            raise ValueError("Size may not be NaN!")
+
+        if not len(rotation) == 4:
+            raise ValueError("Rotation must have 4 elements!")
+
+        if np.any(np.isnan(rotation)):
+            raise ValueError("Rotation may not be NaN!")
+
+        if name is None:
+            raise ValueError("Name cannot be empty!")
 
         # Assign.
         self.sample_token = sample_token
@@ -96,8 +106,7 @@ class Box3D:
 
     @staticmethod
     def check_orthogonal(a, b, c):
-        """Check that vector (b - a) is orthogonal to the vector (c - a)"""
-
+        """Check that vector (b - a) is orthogonal to the vector (c - a)."""
         return np.isclose((b[0] - a[0]) * (c[0] - a[0]) + (b[1] - a[1]) * (c[1] - a[1]), 0)
 
     def get_ground_bbox_coords(self):
@@ -185,11 +194,7 @@ class Box3D:
         return str(self.serialize())
 
     def serialize(self) -> dict:
-        """
-
-        Returns: Serialized instance as dict.
-
-        """
+        """Returns: Serialized instance as dict."""
 
         return {
             "sample_token": self.sample_token,
