@@ -31,8 +31,8 @@ class KittiConverter:
                              lyft_dataroot: str,
                              table_folder: str,
                              lidar_name: str = 'LIDAR_TOP',
-                             get_all_detections = False,
-                             parallel_n_jobs = 4,
+                             get_all_detections=False,
+                             parallel_n_jobs=4,
                              samples_count: Optional[int] = None
                              ) -> None:
         """
