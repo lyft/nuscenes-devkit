@@ -22,15 +22,15 @@ class KittiDB:
         :param root: Base folder for all KITTI data.
         """
         self.root = root
-        self.tables = ('calib', 'image_2', 'label_2', 'velodyne')
-        self._kitti_fileext = {'calib': 'txt', 'image_2': 'png', 'label_2': 'txt', 'velodyne': 'bin'}
+        self.tables = ("calib", "image_2", "label_2", "velodyne")
+        self._kitti_fileext = {"calib": "txt", "image_2": "png", "label_2": "txt", "velodyne": "bin"}
 
         # Grab all the expected tokens.
         self._kitti_tokens = []
 
-        split_dir = self.root.joinpath('image_2')
+        split_dir = self.root.joinpath("image_2")
         _tokens = os.listdir(split_dir)
-        _tokens = [t.replace('.png', '') for t in _tokens]
+        _tokens = [t.replace(".png", "") for t in _tokens]
         _tokens.sort()
         self.tokens = _tokens
 
@@ -50,32 +50,34 @@ class KittiDB:
         :return: Dictionary with all the line details.
         """
 
-        parts = label_line.split(' ')
+        parts = label_line.split(" ")
         output = {
-            'name': parts[0].strip(),
-            'xyz_camera': (float(parts[11]), float(parts[12]), float(parts[13])),
-            'wlh': (float(parts[9]), float(parts[10]), float(parts[8])),
-            'yaw_camera': float(parts[14]),
-            'bbox_camera': (float(parts[4]), float(parts[5]), float(parts[6]), float(parts[7])),
-            'truncation': float(parts[1]),
-            'occlusion': float(parts[2]),
-            'alpha': float(parts[3])
+            "name": parts[0].strip(),
+            "xyz_camera": (float(parts[11]), float(parts[12]), float(parts[13])),
+            "wlh": (float(parts[9]), float(parts[10]), float(parts[8])),
+            "yaw_camera": float(parts[14]),
+            "bbox_camera": (float(parts[4]), float(parts[5]), float(parts[6]), float(parts[7])),
+            "truncation": float(parts[1]),
+            "occlusion": float(parts[2]),
+            "alpha": float(parts[3]),
         }
 
         # Add score if specified
         if len(parts) > 15:
-            output['score'] = float(parts[15])
+            output["score"] = float(parts[15])
         else:
-            output['score'] = np.nan
+            output["score"] = np.nan
 
         return output
 
     @staticmethod
-    def box_nuscenes_to_kitti(box: Box, velo_to_cam_rot: Quaternion,
-                              velo_to_cam_trans: np.ndarray,
-                              r0_rect: Quaternion,
-                              kitti_to_nu_lidar_inv: Quaternion = Quaternion(axis=(0, 0, 1), angle=np.pi / 2).inverse) \
-            -> Box:
+    def box_nuscenes_to_kitti(
+        box: Box,
+        velo_to_cam_rot: Quaternion,
+        velo_to_cam_trans: np.ndarray,
+        r0_rect: Quaternion,
+        kitti_to_nu_lidar_inv: Quaternion = Quaternion(axis=(0, 0, 1), angle=np.pi / 2).inverse,
+    ) -> Box:
         """
         Transform from nuScenes lidar frame to KITTI reference frame.
         :param box: Instance in nuScenes lidar frame.
@@ -105,8 +107,9 @@ class KittiDB:
         return box
 
     @staticmethod
-    def project_kitti_box_to_image(box: Box, p_left: np.ndarray, imsize: Tuple[int, int]) \
-            -> Union[None, Tuple[int, int, int, int]]:
+    def project_kitti_box_to_image(
+        box: Box, p_left: np.ndarray, imsize: Tuple[int, int]
+    ) -> Union[None, Tuple[int, int, int, int]]:
         """
         Projects 3D box into KITTI image FOV.
         :param box: 3D box in KITTI reference frame.
@@ -133,10 +136,12 @@ class KittiDB:
 
         # Crop bbox to prevent it extending outside image.
         bbox_crop = tuple(max(0, b) for b in bbox)
-        bbox_crop = (min(imsize[0], bbox_crop[0]),
-                     min(imsize[0], bbox_crop[1]),
-                     min(imsize[0], bbox_crop[2]),
-                     min(imsize[1], bbox_crop[3]))
+        bbox_crop = (
+            min(imsize[0], bbox_crop[0]),
+            min(imsize[0], bbox_crop[1]),
+            min(imsize[0], bbox_crop[2]),
+            min(imsize[1], bbox_crop[3]),
+        )
 
         # Detect if a cropped box is empty.
         if bbox_crop[0] >= bbox_crop[2] or bbox_crop[1] >= bbox_crop[3]:
@@ -153,34 +158,25 @@ class KittiDB:
         :param root: Base folder for all KITTI data.
         :return: Full get_filepath to desired data.
         """
-        kitti_fileext = {'calib': 'txt', 'image_2': 'png', 'label_2': 'txt', 'velodyne': 'bin'}
+        kitti_fileext = {"calib": "txt", "image_2": "png", "label_2": "txt", "velodyne": "bin"}
 
         ending = kitti_fileext[table]
 
-        filepath = root.joinpath(table, '{}.{}'.format(token, ending))
+        filepath = root.joinpath(table, "{}.{}".format(token, ending))
 
         return str(filepath)
 
     @staticmethod
     def get_transforms(token: str, root: Path) -> dict:
-        calib_filename = KittiDB.get_filepath(token, 'calib', root=root)
+        calib_filename = KittiDB.get_filepath(token, "calib", root=root)
 
         lines = [line.rstrip() for line in open(calib_filename)]
-        velo_to_cam = np.array(
-            lines[5].strip().split(' ')[1:],
-            dtype=np.float64
-        )
+        velo_to_cam = np.array(lines[5].strip().split(" ")[1:], dtype=np.float64)
         velo_to_cam.resize((3, 4))
 
-        r0_rect = np.array(
-            lines[4].strip().split(' ')[1:],
-            dtype=np.float64
-        )
+        r0_rect = np.array(lines[4].strip().split(" ")[1:], dtype=np.float64)
         r0_rect.resize((3, 3))
-        p_left = np.array(
-            lines[2].strip().split(' ')[1:],
-            dtype=np.float64
-        )
+        p_left = np.array(lines[2].strip().split(" ")[1:], dtype=np.float64)
         p_left.resize((3, 4))
 
         # Merge rectification and projection into one matrix.
@@ -188,13 +184,10 @@ class KittiDB:
         p_combined[:3, :3] = r0_rect
         p_combined = np.dot(p_left, p_combined)
         return {
-            'velo_to_cam': {
-                'R': velo_to_cam[:, :3],
-                'T': velo_to_cam[:, 3]
-            },
-            'r0_rect': r0_rect,
-            'p_left': p_left,
-            'p_combined': p_combined,
+            "velo_to_cam": {"R": velo_to_cam[:, :3], "T": velo_to_cam[:, 3]},
+            "r0_rect": r0_rect,
+            "p_left": p_left,
+            "p_combined": p_combined,
         }
 
     @staticmethod
@@ -205,17 +198,14 @@ class KittiDB:
         :param root: Base folder for all KITTI data.
         :return: LidarPointCloud for the sample in the KITTI Lidar frame.
         """
-        pc_filename = KittiDB.get_filepath(token, 'velodyne', root=root)
+        pc_filename = KittiDB.get_filepath(token, "velodyne", root=root)
 
         # The lidar PC is stored in the KITTI LIDAR coord system.
         pc = LidarPointCloud(np.fromfile(pc_filename, dtype=np.float32).reshape(-1, 4).T)
 
         return pc
 
-    def get_boxes(self,
-                  token: str,
-                  filter_classes: List[str] = None,
-                  max_dist: float = None) -> List[Box]:
+    def get_boxes(self, token: str, filter_classes: List[str] = None, max_dist: float = None) -> List[Box]:
         """
         Load up all the boxes associated with a sample.
         Boxes are in nuScenes lidar frame.
@@ -228,23 +218,23 @@ class KittiDB:
         transforms = self.get_transforms(token, root=self.root)
 
         boxes = []
-        if token.startswith('test_'):
+        if token.startswith("test_"):
             # No boxes to return for the test set.
             return boxes
 
-        with open(KittiDB.get_filepath(token, 'label_2', root=self.root), 'r') as f:
+        with open(KittiDB.get_filepath(token, "label_2", root=self.root), "r") as f:
             for line in f:
                 # Parse this line into box information.
                 parsed_line = self.parse_label_line(line)
 
-                if parsed_line['name'] in {'DontCare', 'Misc'}:
+                if parsed_line["name"] in {"DontCare", "Misc"}:
                     continue
 
-                center = parsed_line['xyz_camera']
-                wlh = parsed_line['wlh']
-                yaw_camera = parsed_line['yaw_camera']
-                name = parsed_line['name']
-                score = parsed_line['score']
+                center = parsed_line["xyz_camera"]
+                wlh = parsed_line["wlh"]
+                yaw_camera = parsed_line["yaw_camera"]
+                name = parsed_line["name"]
+                score = parsed_line["score"]
 
                 # Optional: Filter classes.
                 if filter_classes is not None and name not in filter_classes:
@@ -268,9 +258,9 @@ class KittiDB:
                 # 3: Transform to KITTI LIDAR coord system. First transform from rectified camera to camera, then
                 # camera to KITTI lidar.
 
-                box.rotate(Quaternion(matrix=transforms['r0_rect']).inverse)
-                box.translate(-transforms['velo_to_cam']['T'])
-                box.rotate(Quaternion(matrix=transforms['velo_to_cam']['R']).inverse)
+                box.rotate(Quaternion(matrix=transforms["r0_rect"]).inverse)
+                box.translate(-transforms["velo_to_cam"]["T"])
+                box.rotate(Quaternion(matrix=transforms["velo_to_cam"]["R"]).inverse)
                 # 4: Transform to nuScenes LIDAR coord system.
                 box.rotate(self.kitti_to_nu_lidar)
 
@@ -290,28 +280,25 @@ class KittiDB:
 
         return boxes
 
-    def get_boxes_2d(self,
-                     token: str,
-                     filter_classes: List[str] = None) -> Tuple[
-        List[Tuple[float, float, float, float]],
-        List[str]
-    ]:
+    def get_boxes_2d(
+        self, token: str, filter_classes: List[str] = None
+    ) -> Tuple[List[Tuple[float, float, float, float]], List[str]]:
         """
         Get the 2d boxes associated with a sample.
         :return: A list of boxes in KITTI format (xmin, ymin, xmax, ymax) and a list of the class names.
         """
         boxes = []
         names = []
-        with open(KittiDB.get_filepath(token, 'label_2', root=self.root), 'r') as f:
+        with open(KittiDB.get_filepath(token, "label_2", root=self.root), "r") as f:
             for line in f:
                 # Parse this line into box information.
                 parsed_line = self.parse_label_line(line)
 
-                if parsed_line['name'] in {'DontCare', 'Misc'}:
+                if parsed_line["name"] in {"DontCare", "Misc"}:
                     continue
 
-                bbox_2d = parsed_line['bbox_camera']
-                name = parsed_line['name']
+                bbox_2d = parsed_line["bbox_camera"]
+                name = parsed_line["name"]
 
                 # Optional: Filter classes.
                 if filter_classes is not None and name not in filter_classes:
@@ -322,12 +309,14 @@ class KittiDB:
         return boxes, names
 
     @staticmethod
-    def box_to_string(name: str,
-                      box: Box,
-                      bbox_2d: Tuple[float, float, float, float] = (-1.0, -1.0, -1.0, -1.0),
-                      truncation: float = -1.0,
-                      occlusion: int = -1,
-                      alpha: float = -10.0) -> str:
+    def box_to_string(
+        name: str,
+        box: Box,
+        bbox_2d: Tuple[float, float, float, float] = (-1.0, -1.0, -1.0, -1.0),
+        truncation: float = -1.0,
+        occlusion: int = -1,
+        alpha: float = -10.0,
+    ) -> str:
         """
         Convert box in KITTI image frame to official label string fromat.
         :param name: KITTI name of the box.
@@ -344,15 +333,15 @@ class KittiDB:
         yaw = -np.arctan2(v[2], v[0])
 
         # Prepare output.
-        name += ' '
-        trunc = '{:.2f} '.format(truncation)
-        occ = '{:d} '.format(occlusion)
-        a = '{:.2f} '.format(alpha)
-        bb = '{:.2f} {:.2f} {:.2f} {:.2f} '.format(bbox_2d[0], bbox_2d[1], bbox_2d[2], bbox_2d[3])
-        hwl = '{:.2} {:.2f} {:.2f} '.format(box.wlh[2], box.wlh[0], box.wlh[1])  # height, width, length.
-        xyz = '{:.2f} {:.2f} {:.2f} '.format(box.center[0], box.center[1], box.center[2])  # x, y, z.
-        y = '{:.2f}'.format(yaw)  # Yaw angle.
-        s = ' {:.4f}'.format(box.score)  # Classification score.
+        name += " "
+        trunc = "{:.2f} ".format(truncation)
+        occ = "{:d} ".format(occlusion)
+        a = "{:.2f} ".format(alpha)
+        bb = "{:.2f} {:.2f} {:.2f} {:.2f} ".format(bbox_2d[0], bbox_2d[1], bbox_2d[2], bbox_2d[3])
+        hwl = "{:.2} {:.2f} {:.2f} ".format(box.wlh[2], box.wlh[0], box.wlh[1])  # height, width, length.
+        xyz = "{:.2f} {:.2f} {:.2f} ".format(box.center[0], box.center[1], box.center[2])  # x, y, z.
+        y = "{:.2f}".format(yaw)  # Yaw angle.
+        s = " {:.4f}".format(box.score)  # Classification score.
 
         output = name + trunc + occ + a + bb + hwl + xyz + y
         if ~np.isnan(box.score):
@@ -374,30 +363,32 @@ class KittiDB:
 
         # Transform pointcloud to camera frame.
         transforms = self.get_transforms(token, root=self.root)
-        pc_image.rotate(transforms['velo_to_cam']['R'])
-        pc_image.translate(transforms['velo_to_cam']['T'])
+        pc_image.rotate(transforms["velo_to_cam"]["R"])
+        pc_image.translate(transforms["velo_to_cam"]["T"])
 
         # Project to image.
         depth = pc_image.points[2, :]
-        points_fov = view_points(pc_image.points[:3, :], transforms['p_combined'], normalize=True)
+        points_fov = view_points(pc_image.points[:3, :], transforms["p_combined"], normalize=True)
         points_fov[2, :] = depth
 
         return points_fov
 
-    def render_sample_data(self,
-                           token: str,
-                           sensor_modality: str = 'lidar',
-                           with_anns: bool = True,
-                           axes_limit: float = 30,
-                           ax: Axes = None,
-                           view_3d: np.ndarray = np.eye(4),
-                           color_func: Any = None,
-                           augment_previous: bool = False,
-                           box_linewidth: int = 2,
-                           filter_classes: List[str] = None,
-                           max_dist: float = None,
-                           out_path: str = None,
-                           render_2d: bool = False) -> None:
+    def render_sample_data(
+        self,
+        token: str,
+        sensor_modality: str = "lidar",
+        with_anns: bool = True,
+        axes_limit: float = 30,
+        ax: Axes = None,
+        view_3d: np.ndarray = np.eye(4),
+        color_func: Any = None,
+        augment_previous: bool = False,
+        box_linewidth: int = 2,
+        filter_classes: List[str] = None,
+        max_dist: float = None,
+        out_path: str = None,
+        render_2d: bool = False,
+    ) -> None:
         """
         Render sample data onto axis. Visualizes lidar in nuScenes lidar frame and camera in camera frame.
         :param token: KITTI token.
@@ -420,7 +411,7 @@ class KittiDB:
 
         boxes = self.get_boxes(token, filter_classes=filter_classes, max_dist=max_dist)  # In nuScenes lidar frame.
 
-        if sensor_modality == 'lidar':
+        if sensor_modality == "lidar":
             # Load pointcloud.
             pc = self.get_pointcloud(token, self.root)  # In KITTI lidar frame.
             pc.rotate(self.kitti_to_nu_lidar.rotation_matrix)  # In nuScenes lidar frame.
@@ -444,10 +435,10 @@ class KittiDB:
             if with_anns:
                 for box in boxes:
                     color = np.array(color_func(box.name)) / 255
-                    box.render(ax, view=view_3d, colors=(color, color, 'k'), linewidth=box_linewidth)
+                    box.render(ax, view=view_3d, colors=(color, color, "k"), linewidth=box_linewidth)
 
-        elif sensor_modality == 'camera':
-            im_path = KittiDB.get_filepath(token, 'image_2', root=self.root)
+        elif sensor_modality == "camera":
+            im_path = KittiDB.get_filepath(token, "image_2", root=self.root)
             im = Image.open(im_path)
 
             if ax is None:
@@ -474,24 +465,29 @@ class KittiDB:
                     for box in boxes:
                         # Undo the transformations in get_boxes() to get back to the camera frame.
                         box.rotate(self.kitti_to_nu_lidar_inv)  # In KITTI lidar frame.
-                        box.rotate(Quaternion(matrix=transforms['velo_to_cam']['R']))
-                        box.translate(transforms['velo_to_cam']['T'])  # In KITTI camera frame, un-rectified.
-                        box.rotate(Quaternion(matrix=transforms['r0_rect']))  # In KITTI camera frame, rectified.
+                        box.rotate(Quaternion(matrix=transforms["velo_to_cam"]["R"]))
+                        box.translate(transforms["velo_to_cam"]["T"])  # In KITTI camera frame, un-rectified.
+                        box.rotate(Quaternion(matrix=transforms["r0_rect"]))  # In KITTI camera frame, rectified.
 
                         # Filter boxes outside the image (relevant when visualizing nuScenes data in KITTI format).
-                        if not box_in_image(box, transforms['p_left'][:3, :3], im.size, vis_level=BoxVisibility.ANY):
+                        if not box_in_image(box, transforms["p_left"][:3, :3], im.size, vis_level=BoxVisibility.ANY):
                             continue
 
                         # Render.
                         color = np.array(color_func(box.name)) / 255
-                        box.render(ax, view=transforms['p_left'][:3, :3], normalize=True, colors=(color, color, 'k'),
-                                   linewidth=box_linewidth)
+                        box.render(
+                            ax,
+                            view=transforms["p_left"][:3, :3],
+                            normalize=True,
+                            colors=(color, color, "k"),
+                            linewidth=box_linewidth,
+                        )
         else:
             raise ValueError("Unrecognized modality {}.".format(sensor_modality))
 
-        ax.axis('off')
+        ax.axis("off")
         ax.set_title(token)
-        ax.set_aspect('equal')
+        ax.set_aspect("equal")
 
         # Render to disk.
         plt.tight_layout()

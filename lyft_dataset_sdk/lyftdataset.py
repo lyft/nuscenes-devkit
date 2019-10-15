@@ -94,7 +94,6 @@ class LyftDataset:
 
         # Initialize LyftDatasetExplorer class
         self.explorer = LyftDatasetExplorer(self)
-        
 
     def __load_table__(self, table_name, verbose=False, missing_ok=False) -> dict:
         """Loads a table."""
@@ -538,13 +537,8 @@ class LyftDataset:
 
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None, out_path: str = None) -> None:
         self.explorer.render_egoposes_on_map(log_location, scene_tokens, out_path=out_path)
-        
-        
-    def render_sample_3d_interactive(
-        self, 
-        sample_id: str,
-        render_sample: bool = True
-    ) -> None:
+
+    def render_sample_3d_interactive(self, sample_id: str, render_sample: bool = True) -> None:
         """Render 3D visualization of the sample using plotly
 
         Args:
@@ -554,35 +548,23 @@ class LyftDataset:
         """
         import pandas as pd
         import plotly.graph_objects as go
-        
-        sample = self.get('sample', sample_id)
-        sample_data = self.get(
-            'sample_data', 
-            sample['data']['LIDAR_TOP']
-        )
-        pc = LidarPointCloud.from_file(
-            Path(os.path.join(str(self.data_path),
-                              sample_data['filename']))
-        )
-        _, boxes, _ = self.get_sample_data(
-            sample['data']['LIDAR_TOP'], flat_vehicle_coordinates=False
-        )
+
+        sample = self.get("sample", sample_id)
+        sample_data = self.get("sample_data", sample["data"]["LIDAR_TOP"])
+        pc = LidarPointCloud.from_file(Path(os.path.join(str(self.data_path), sample_data["filename"])))
+        _, boxes, _ = self.get_sample_data(sample["data"]["LIDAR_TOP"], flat_vehicle_coordinates=False)
 
         if render_sample:
             self.render_sample(sample_id)
 
-        df_tmp = pd.DataFrame(pc.points[:3, :].T, columns=['x', 'y', 'z'])
-        df_tmp['norm'] = np.sqrt(np.power(df_tmp[['x', 'y', 'z']].values, 2).sum(axis=1))
+        df_tmp = pd.DataFrame(pc.points[:3, :].T, columns=["x", "y", "z"])
+        df_tmp["norm"] = np.sqrt(np.power(df_tmp[["x", "y", "z"]].values, 2).sum(axis=1))
         scatter = go.Scatter3d(
-            x=df_tmp['x'],
-            y=df_tmp['y'],
-            z=df_tmp['z'],
-            mode='markers',
-            marker=dict(
-                size=1,
-                color=df_tmp['norm'],
-                opacity=0.8
-            )
+            x=df_tmp["x"],
+            y=df_tmp["y"],
+            z=df_tmp["z"],
+            mode="markers",
+            marker=dict(size=1, color=df_tmp["norm"], opacity=0.8),
         )
 
         x_lines = []
@@ -601,7 +583,7 @@ class LyftDataset:
             points = view_points(box.corners(), view=np.eye(3), normalize=False)
             x_lines.extend(points[0, ixs_box_0])
             y_lines.extend(points[1, ixs_box_0])
-            z_lines.extend(points[2, ixs_box_0])    
+            z_lines.extend(points[2, ixs_box_0])
             f_lines_add_nones()
             x_lines.extend(points[0, ixs_box_1])
             y_lines.extend(points[1, ixs_box_1])
@@ -613,16 +595,10 @@ class LyftDataset:
                 z_lines.extend(points[2, [ixs_box_0[i], ixs_box_1[i]]])
                 f_lines_add_nones()
 
-        lines = go.Scatter3d(
-            x=x_lines,
-            y=y_lines,
-            z=z_lines,
-            mode='lines',
-            name='lines'
-        )
+        lines = go.Scatter3d(x=x_lines, y=y_lines, z=z_lines, mode="lines", name="lines")
 
         fig = go.Figure(data=[scatter, lines])
-        fig.update_layout(scene_aspectmode='data')
+        fig.update_layout(scene_aspectmode="data")
         fig.show()
 
 
