@@ -27,6 +27,9 @@ Go to <https://level5.lyft.com/dataset/> to download the Lyft Level 5 AV Dataset
 
 The dataset is also availible as a part of the [Lyft 3D Object Detection for Autonomous Vehicles Challenge](https://www.kaggle.com/c/3d-object-detection-for-autonomous-vehicles).
 
+### Utils for converting LEVEL5 data into Kitti format
+Simply run<br />`python -m lyft_dataset_sdk.utils.export_kitti nuscenes_gt_to_kitti --lyft_dataroot ${DS_PTH} --table_folder ${TBL_PTH}`<br />for converting data.<br />See help ( `python -m lyft_dataset_sdk.utils.export_kitti nuscenes_gt_to_kitti --help` ) for more information.<br />You can draw results after converting with utils:<br />`python -m lyft_dataset_sdk.utils.export_kitti render_kitti`
+
 ### Tutorial and Reference Model
 Check out the [tutorial and reference model README](notebooks/README.md).
 
