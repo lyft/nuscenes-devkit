@@ -99,7 +99,7 @@ class LyftDataset:
         """Loads a table."""
         filepath = self.json_path.joinpath("{}.json".format(table_name))
 
-        if not filepath.exists() and missing_ok:
+        if not filepath.is_file() and missing_ok:
             if verbose:
                 print("JSON file {}.json missing, using empty list".format(table_name))
             return []
