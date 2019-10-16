@@ -2,6 +2,28 @@
 # based on the code written by Alex Lang and Holger Caesar, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
+"""
+https://www.kaggle.com/c/3d-object-detection-for-autonomous-vehicles/discussion/112409649874
+
+
+This script converts nuScenes data to KITTI format and KITTI results to nuScenes.
+It is used for compatibility with software that uses KITTI-style annotations.
+
+The difference beteeen formats:
+    KITTI has only front-facing cameras, whereas nuScenes has a 360 degree horizontal fov.
+    KITTI has no radar data.
+    The nuScenes database format is more modular.
+    KITTI fields like occluded and truncated cannot be exactly reproduced from nuScenes data.
+    KITTI has different categories.
+
+Current limitations of the script.:
+    We don't specify the KITTI imu_to_velo_kitti projection in this code base.
+    We map nuScenes categories to nuScenes detection categories, rather than KITTI categories.
+    Attributes are not part of KITTI and therefore set to '' in the nuScenes result format.
+    Velocities are not part of KITTI and therefore set to 0 in the nuScenes result format.
+    This script uses the train and val splits of nuScenes, whereas standard KITTI has training and testing splits.
+"""
+
 from pathlib import Path
 from typing import List, Optional
 
