@@ -19,7 +19,9 @@ from pyquaternion import Quaternion
 class KittiDB:
     def __init__(self, root: Path):
         """
-        :param root: Base folder for all KITTI data.
+
+        Args:
+            root: Base folder for all KITTI data.
         """
         self.root = root
         self.tables = ("calib", "image_2", "label_2", "velodyne")
@@ -43,13 +45,15 @@ class KittiDB:
 
     @staticmethod
     def parse_label_line(label_line) -> dict:
-        """
-        Parses single line from label file into a dict. Boxes are in camera frame. See KITTI devkit for details and
+        """Parses single line from label file into a dict. Boxes are in camera frame. See KITTI devkit for details and
         http://www.cvlibs.net/datasets/kitti/setup.php for visualizations of the setup.
-        :param label_line: Single line from KittiDB label file.
-        :return: Dictionary with all the line details.
-        """
 
+        Args:
+            label_line: Single line from KittiDB label file.
+
+        Returns: Dictionary with all the line details.
+
+        """
         parts = label_line.split(" ")
         output = {
             "name": parts[0].strip(),
@@ -78,14 +82,17 @@ class KittiDB:
         r0_rect: Quaternion,
         kitti_to_nu_lidar_inv: Quaternion = Quaternion(axis=(0, 0, 1), angle=np.pi / 2).inverse,
     ) -> Box:
-        """
-        Transform from nuScenes lidar frame to KITTI reference frame.
-        :param box: Instance in nuScenes lidar frame.
-        :param velo_to_cam_rot: Quaternion to rotate from lidar to camera frame.
-        :param velo_to_cam_trans: <np.float: 3>. Translate from lidar to camera frame.
-        :param r0_rect: Quaternion to rectify camera frame.
-        :param kitti_to_nu_lidar_inv: Quaternion to rotate nuScenes to KITTI LIDAR.
-        :return: Box instance in KITTI reference frame.
+        """Transform from nuScenes lidar frame to KITTI reference frame.
+
+        Args:
+            box: Instance in nuScenes lidar frame.
+            velo_to_cam_rot: Quaternion to rotate from lidar to camera frame.
+            velo_to_cam_trans: <np.float: 3>. Translate from lidar to camera frame.
+            r0_rect: Quaternion to rectify camera frame.
+            kitti_to_nu_lidar_inv: Quaternion to rotate nuScenes to KITTI LIDAR.
+
+        Returns: Box instance in KITTI reference frame.
+
         """
         # Copy box to avoid side-effects.
         box = box.copy()
@@ -110,14 +117,16 @@ class KittiDB:
     def project_kitti_box_to_image(
         box: Box, p_left: np.ndarray, imsize: Tuple[int, int]
     ) -> Union[None, Tuple[int, int, int, int]]:
-        """
-        Projects 3D box into KITTI image FOV.
-        :param box: 3D box in KITTI reference frame.
-        :param p_left: <np.float: 3, 4>. Projection matrix.
-        :param imsize: (width, height). Image size.
-        :return: (xmin, ymin, xmax, ymax). Bounding box in image plane or None if box is not in the image.
-        """
+        """Projects 3D box into KITTI image FOV.
 
+        Args:
+            box: 3D box in KITTI reference frame.
+            p_left: <np.float: 3, 4>. Projection matrix.
+            imsize: (width, height). Image size.
+
+        Returns: (xmin, ymin, xmax, ymax). Bounding box in image plane or None if box is not in the image.
+
+        """
         # Create a new box.
         box = box.copy()
 
@@ -151,18 +160,21 @@ class KittiDB:
 
     @staticmethod
     def get_filepath(token: str, table: str, root: Path) -> str:
-        """
-        For a token and table, get the filepath to the associated data.
-        :param token: KittiDB unique id.
-        :param table: Type of table, for example image or velodyne.
-        :param root: Base folder for all KITTI data.
-        :return: Full get_filepath to desired data.
+        """For a token and table, get the filepath to the associated data.
+
+        Args:
+            token: KittiDB unique id.
+            table: Type of table, for example image or velodyne.
+            root: Base folder for all KITTI data.
+
+        Returns: Full get_filepath to desired data.
+
         """
         kitti_fileext = {"calib": "txt", "image_2": "png", "label_2": "txt", "velodyne": "bin"}
 
         ending = kitti_fileext[table]
 
-        filepath = root.joinpath(table, "{}.{}".format(token, ending))
+        filepath = root.joinpath(table, f"{token}.{ending}")
 
         return str(filepath)
 
@@ -192,11 +204,14 @@ class KittiDB:
 
     @staticmethod
     def get_pointcloud(token: str, root: Path) -> LidarPointCloud:
-        """
-        Load up the pointcloud for a sample.
-        :param token: KittiDB unique id.
-        :param root: Base folder for all KITTI data.
-        :return: LidarPointCloud for the sample in the KITTI Lidar frame.
+        """Load up the point cloud for a sample.
+
+        Args:
+            token: KittiDB unique id.
+            root: Base folder for all KITTI data.
+
+        Returns: LidarPointCloud for the sample in the KITTI Lidar frame.
+
         """
         pc_filename = KittiDB.get_filepath(token, "velodyne", root=root)
 
@@ -206,13 +221,16 @@ class KittiDB:
         return pc
 
     def get_boxes(self, token: str, filter_classes: List[str] = None, max_dist: float = None) -> List[Box]:
-        """
-        Load up all the boxes associated with a sample.
-        Boxes are in nuScenes lidar frame.
-        :param token: KittiDB unique id.
-        :param filter_classes: List of Kitti classes to use or None to use all.
-        :param max_dist: Maximum distance in m to still draw a box.
-        :return: Boxes in nuScenes lidar reference frame.
+        """Load up all the boxes associated with a sample.
+            Boxes are in nuScenes lidar frame.
+
+        Args:
+            token: KittiDB unique id.
+            filter_classes: List of Kitti classes to use or None to use all.
+            max_dist: List of Kitti classes to use or None to use all.
+
+        Returns: Boxes in nuScenes lidar reference frame.
+
         """
         # Get transforms for this sample
         transforms = self.get_transforms(token, root=self.root)
@@ -283,9 +301,14 @@ class KittiDB:
     def get_boxes_2d(
         self, token: str, filter_classes: List[str] = None
     ) -> Tuple[List[Tuple[float, float, float, float]], List[str]]:
-        """
-        Get the 2d boxes associated with a sample.
-        :return: A list of boxes in KITTI format (xmin, ymin, xmax, ymax) and a list of the class names.
+        """Get the 2d boxes associated with a sample.
+
+        Args:
+            token:
+            filter_classes:
+
+        Returns: A list of boxes in KITTI format (xmin, ymin, xmax, ymax) and a list of the class names.
+
         """
         boxes = []
         names = []
@@ -317,16 +340,19 @@ class KittiDB:
         occlusion: int = -1,
         alpha: float = -10.0,
     ) -> str:
-        """
-        Convert box in KITTI image frame to official label string fromat.
-        :param name: KITTI name of the box.
-        :param box: Box class in KITTI image frame.
-        :param bbox_2d: Optional, 2D bounding box obtained by projected Box into image (xmin, ymin, xmax, ymax).
-            Otherwise set to KITTI default.
-        :param truncation: Optional truncation, otherwise set to KITTI default.
-        :param occlusion: Optional occlusion, otherwise set to KITTI default.
-        :param alpha: Optional alpha, otherwise set to KITTI default.
-        :return: KITTI string representation of box.
+        """Convert box in KITTI image frame to official label string fromat.
+
+        Args:
+            name: KITTI name of the box.
+            box: Box class in KITTI image frame.
+            bbox_2d: Optional, 2D bounding box obtained by projected Box into image (xmin, ymin, xmax, ymax).
+                Otherwise set to KITTI default.
+            truncation: Optional truncation, otherwise set to KITTI default.
+            occlusion: Optional occlusion, otherwise set to KITTI default.
+            alpha: Optional alpha, otherwise set to KITTI default.
+
+        Returns: KITTI string representation of box.
+
         """
         # Convert quaternion to yaw angle.
         v = np.dot(box.rotation_matrix, np.array([1, 0, 0]))
@@ -350,13 +376,15 @@ class KittiDB:
         return output
 
     def project_pts_to_image(self, pointcloud: LidarPointCloud, token: str) -> np.ndarray:
-        """
-        Project lidar points into image.
-        :param pointcloud: The LidarPointCloud in nuScenes lidar frame.
-        :param token: Unique KITTI token.
-        :return: <np.float: N, 3.> X, Y are points in image pixel coordinates. Z is depth in image.
-        """
+        """Project lidar points into image.
 
+        Args:
+            pointcloud: The LidarPointCloud in nuScenes lidar frame.
+            token: Unique KITTI token.
+
+        Returns: <np.float: N, 3.> X, Y are points in image pixel coordinates. Z is depth in image.
+
+        """
         # Copy and convert pointcloud.
         pc_image = LidarPointCloud(points=pointcloud.points.copy())
         pc_image.rotate(self.kitti_to_nu_lidar_inv)  # Rotate to KITTI lidar.
@@ -389,21 +417,23 @@ class KittiDB:
         out_path: str = None,
         render_2d: bool = False,
     ) -> None:
-        """
-        Render sample data onto axis. Visualizes lidar in nuScenes lidar frame and camera in camera frame.
-        :param token: KITTI token.
-        :param sensor_modality: The modality to visualize, e.g. lidar or camera.
-        :param with_anns: Whether to draw annotations.
-        :param axes_limit: Axes limit for lidar data (measured in meters).
-        :param ax: Axes onto which to render.
-        :param view_3d: 4x4 view matrix for 3d views.
-        :param color_func: Optional function that defines the render color given the class name.
-        :param augment_previous: Whether to augment an existing plot (does not redraw pointcloud/image).
-        :param box_linewidth: Width of the box lines.
-        :param filter_classes: Optionally filter the classes to render.
-        :param max_dist: Maximum distance in m to still draw a box.
-        :param out_path: Optional path to save the rendered figure to disk.
-        :param render_2d: Whether to render 2d boxes (only works for camera data).
+        """Render sample data onto axis. Visualizes lidar in nuScenes lidar frame and camera in camera frame.
+
+        Args:
+            token: KITTI token.
+            sensor_modality: The modality to visualize, e.g. lidar or camera.
+            with_anns: Whether to draw annotations.
+            axes_limit: Axes limit for lidar data (measured in meters).
+            ax: Axes onto which to render.
+            view_3d: 4x4 view matrix for 3d views.
+            color_func: Optional function that defines the render color given the class name.
+            augment_previous: Whether to augment an existing plot (does not redraw pointcloud/image).
+            box_linewidth: Width of the box lines.
+            filter_classes: Optionally filter the classes to render.
+            max_dist: Maximum distance in meters to still draw a box.
+            out_path: Optional path to save the rendered figure to disk.
+            render_2d: Whether to render 2d boxes (only works for camera data).
+
         """
         # Default settings.
         if color_func is None:
