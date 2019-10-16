@@ -97,7 +97,7 @@ class LyftDataset:
 
     def __load_table__(self, table_name: str, verbose: bool = False, missing_ok: bool = False) -> dict:
         """Loads a table."""
-        filepath = self.json_path.joinpath(f"{table_name}.json")
+        filepath = self.json_path / f"{table_name}.json"
 
         if not filepath.is_file() and missing_ok:
             if verbose:

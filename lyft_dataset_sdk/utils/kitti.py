@@ -30,7 +30,7 @@ class KittiDB:
         # Grab all the expected tokens.
         self._kitti_tokens = []
 
-        split_dir = self.root.joinpath("image_2")
+        split_dir = self.root / "image_2"
         _tokens = os.listdir(split_dir)
         _tokens = [t.replace(".png", "") for t in _tokens]
         _tokens.sort()
@@ -174,7 +174,7 @@ class KittiDB:
 
         ending = kitti_fileext[table]
 
-        filepath = root.joinpath(table, f"{token}.{ending}")
+        filepath = root / table / f"{token}.{ending}"
 
         return str(filepath)
 
