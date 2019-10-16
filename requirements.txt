@@ -14,3 +14,4 @@ black
 matplotlib
 pandas
 plotly
+fire

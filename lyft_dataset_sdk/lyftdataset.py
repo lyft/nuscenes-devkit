@@ -86,7 +86,7 @@ class LyftDataset:
 
         if verbose:
             for table in self.table_names:
-                print("{} {},".format(len(getattr(self, table)), table))
+                print(f"{len(getattr(self, table))} {table},")
             print("Done loading in {:.1f} seconds.\n======".format(time.time() - start_time))
 
         # Make reverse indexes for common lookups.
@@ -95,16 +95,16 @@ class LyftDataset:
         # Initialize LyftDatasetExplorer class
         self.explorer = LyftDatasetExplorer(self)
 
-    def __load_table__(self, table_name, verbose=False, missing_ok=False) -> dict:
+    def __load_table__(self, table_name: str, verbose: bool = False, missing_ok: bool = False) -> dict:
         """Loads a table."""
-        filepath = str(self.json_path.joinpath("{}.json".format(table_name)))
+        filepath = self.json_path / f"{table_name}.json"
 
-        if not os.path.isfile(filepath) and missing_ok:
+        if not filepath.is_file() and missing_ok:
             if verbose:
-                print("JSON file {}.json missing, using empty list".format(table_name))
+                print(f"JSON file {table_name}.json missing, using empty list")
             return []
 
-        with open(filepath) as f:
+        with open(str(filepath)) as f:
             table = json.load(f)
         return table
 
@@ -178,7 +178,7 @@ class LyftDataset:
 
         """
 
-        assert table_name in self.table_names, "Table {} not found".format(table_name)
+        assert table_name in self.table_names, f"Table {table_name} not found"
 
         return getattr(self, table_name)[self.getind(table_name, token)]
 
@@ -552,7 +552,7 @@ class LyftDataset:
 
         sample = self.get("sample", sample_id)
         sample_data = self.get("sample_data", sample["data"]["LIDAR_TOP"])
-        pc = LidarPointCloud.from_file(Path(os.path.join(str(self.data_path), sample_data["filename"])))
+        pc = LidarPointCloud.from_file(self.data_path / sample_data["filename"])
         _, boxes, _ = self.get_sample_data(sample["data"]["LIDAR_TOP"], flat_vehicle_coordinates=False)
 
         if render_sample:
@@ -674,10 +674,10 @@ class LyftDatasetExplorer:
                 attribute_counts[att_name] += 1
 
         for name, count in sorted(attribute_counts.items()):
-            print("{}: {}".format(name, count))
+            print(f"{name}: {count}")
 
     def list_scenes(self) -> None:
-        """ Lists all scenes with some meta data. """
+        """Lists all scenes with some meta data."""
 
         def ann_count(record):
             count = 0
@@ -716,18 +716,16 @@ class LyftDatasetExplorer:
         """Prints sample_data tokens and sample_annotation tokens related to the sample_token."""
 
         sample_record = self.lyftd.get("sample", sample_token)
-        print("Sample: {}\n".format(sample_record["token"]))
+        print(f"Sample: {sample_record['token']}\n")
         for sd_token in sample_record["data"].values():
             sd_record = self.lyftd.get("sample_data", sd_token)
             print(
-                "sample_data_token: {}, mod: {}, channel: {}".format(
-                    sd_token, sd_record["sensor_modality"], sd_record["channel"]
-                )
+                f"sample_data_token: {sd_token}, mod: {sd_record['sensor_modality']}, channel: {sd_record['channel']}"
             )
         print("")
         for ann_token in sample_record["anns"]:
             ann_record = self.lyftd.get("sample_annotation", ann_token)
-            print("sample_annotation_token: {}, category: {}".format(ann_record["token"], ann_record["category_name"]))
+            print(f"sample_annotation_token: {ann_record['token']}, category: {ann_record['category_name']}")
 
     def map_pointcloud_to_image(self, pointsensor_token: str, camera_token: str) -> Tuple:
         """Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to
@@ -1231,7 +1229,7 @@ class LyftDatasetExplorer:
 
         time_step = 1 / freq * 1e6  # Time-stamps are measured in micro-seconds.
 
-        window_name = "{}".format(scene_rec["name"])
+        window_name = f"{scene_rec['name']}"
         cv2.namedWindow(window_name)
         cv2.moveWindow(window_name, 0, 0)
 
@@ -1357,7 +1355,7 @@ class LyftDatasetExplorer:
         ]
 
         assert image_size[0] / image_size[1] == 16 / 9, "Aspect ratio should be 16/9."
-        assert channel in valid_channels, "Input channel {} not valid.".format(channel)
+        assert channel in valid_channels, f"Input channel {channel} not valid."
 
         if out_path is not None:
             assert out_path.suffix == ".avi"
@@ -1369,7 +1367,7 @@ class LyftDatasetExplorer:
 
         # Open CV init
         if interactive:
-            name = "{}: {} (Space to pause, ESC to exit)".format(scene_rec["name"], channel)
+            name = f"{scene_rec['name']}: {channel} (Space to pause, ESC to exit)"
             cv2.namedWindow(name)
             cv2.moveWindow(name, 0, 0)
 
@@ -1513,7 +1511,7 @@ class LyftDatasetExplorer:
         # Plot.
         _, ax = plt.subplots(1, 1, figsize=(10, 10))
         ax.imshow(mask)
-        title = "Number of ego poses within {}m in {}".format(close_dist, log_location)
+        title = f"Number of ego poses within {close_dist}m in {log_location}"
         ax.set_title(title, color="k")
         sc = ax.scatter(map_poses[:, 0], map_poses[:, 1], s=10, c=close_poses)
         color_bar = plt.colorbar(sc, fraction=0.025, pad=0.04)
