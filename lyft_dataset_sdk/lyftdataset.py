@@ -97,14 +97,14 @@ class LyftDataset:
 
     def __load_table__(self, table_name, verbose=False, missing_ok=False) -> dict:
         """Loads a table."""
-        filepath = str(self.json_path.joinpath("{}.json".format(table_name)))
+        filepath = self.json_path.joinpath("{}.json".format(table_name))
 
-        if not os.path.isfile(filepath) and missing_ok:
+        if not filepath.exists() and missing_ok:
             if verbose:
                 print("JSON file {}.json missing, using empty list".format(table_name))
             return []
 
-        with open(filepath) as f:
+        with open(str(filepath)) as f:
             table = json.load(f)
         return table
 
@@ -552,7 +552,7 @@ class LyftDataset:
 
         sample = self.get("sample", sample_id)
         sample_data = self.get("sample_data", sample["data"]["LIDAR_TOP"])
-        pc = LidarPointCloud.from_file(Path(os.path.join(str(self.data_path), sample_data["filename"])))
+        pc = LidarPointCloud.from_file(self.data_path / sample_data["filename"])
         _, boxes, _ = self.get_sample_data(sample["data"]["LIDAR_TOP"], flat_vehicle_coordinates=False)
 
         if render_sample:

@@ -1,5 +1,5 @@
-# nuScenes dev-kit.
-# Code written by Alex Lang and Holger Caesar, 2019.
+# Lyft dataset SDK
+# based on the code written by Alex Lang and Holger Caesar, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
 import os

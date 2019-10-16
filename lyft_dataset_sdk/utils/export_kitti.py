@@ -1,3 +1,7 @@
+# Lyft dataset SDK
+# based on the code written by Alex Lang and Holger Caesar, 2019.
+# Licensed under the Creative Commons [see licence.txt]
+
 from pathlib import Path
 from typing import List, Optional
 
@@ -17,7 +21,9 @@ from tqdm import tqdm
 class KittiConverter:
     def __init__(self, store_dir: str = "~/lyft_kitti/train/"):
         """
-        :param store_dir: Where to write the KITTI-style annotations.
+
+        Args:
+            store_dir: Where to write the KITTI-style annotations.
         """
         self.store_dir = Path(store_dir).expanduser()
 
@@ -34,18 +40,21 @@ class KittiConverter:
         parallel_n_jobs: int = 4,
         samples_count: Optional[int] = None,
     ) -> None:
-        """
-         Converts nuScenes GT fromatted annotations to KITTI format.
-        :param lyft_dataroot: Where lyft dataset stored (root dir).
-        :param table_folder: folder with tables (json files).
-        :param lidar_name: Name of the lidar sensor.
-            Only one lidar allowed at this moment.
-        :param get_all_detections: If True, will write all
-            bboxes in PointCloud and use only FrontCamera.
-        :param parallel_n_jobs: Number of threads to parralel processing.
-        :param samples_count: Number of samples to convert.
-        """
+        """Converts nuScenes GT fromatted annotations to KITTI format.
 
+        Args:
+            lyft_dataroot: folder with tables (json files).
+            table_folder: folder with tables (json files).
+            lidar_name: Name of the lidar sensor.
+                Only one lidar allowed at this moment.
+            get_all_detections: If True, will write all
+                bboxes in PointCloud and use only FrontCamera.
+            parallel_n_jobs: Number of threads to parralel processing.
+            samples_count: Number of samples to convert.
+
+        Returns:
+
+        """
         self.lyft_dataroot = lyft_dataroot
         self.table_folder = table_folder
         self.lidar_name = lidar_name
@@ -242,9 +251,13 @@ class KittiConverter:
                     label_file.write(output + "\n")
 
     def render_kitti(self, render_2d: bool = False) -> None:
-        """
-        Renders the annotations in the KITTI dataset from a lidar and a camera view.
-        :param render_2d: Whether to render 2d boxes (only works for camera data).
+        """Renders the annotations in the KITTI dataset from a lidar and a camera view.
+
+        Args:
+            render_2d: Whether to render 2d boxes (only works for camera data).
+
+        Returns:
+
         """
         if render_2d:
             print("Rendering 2d boxes from KITTI format")
@@ -272,10 +285,13 @@ class KittiConverter:
                 plt.close()
 
     def _split_to_samples(self, split_logs: List[str]) -> List[str]:
-        """
-        Convenience function to get the samples in a particular split.
-        :param split_logs: A list of the log names in this split.
-        :return: The list of samples.
+        """Convenience function to get the samples in a particular split.
+
+        Args:
+            split_logs: A list of the log names in this split.
+
+        Returns: The list of samples.
+
         """
         samples = []
         for sample in self.lyft_ds.sample:
