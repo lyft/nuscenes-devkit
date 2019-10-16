@@ -62,7 +62,7 @@ class KittiConverter:
         parallel_n_jobs: int = 4,
         samples_count: Optional[int] = None,
     ) -> None:
-        """Converts nuScenes GT fromatted annotations to KITTI format.
+        """Converts nuScenes GT formatted annotations to KITTI format.
 
         Args:
             lyft_dataroot: folder with tables (json files).
