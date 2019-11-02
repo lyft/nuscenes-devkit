@@ -4,6 +4,7 @@ python:
 - '3.6'
 install:
 - pip install -r requirements.txt
+- pip install hypothesis
 - pip install -e .
 script:
 - black . --check
