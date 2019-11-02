@@ -126,7 +126,7 @@ class Box3D:
         rotation_matrix = self.quaternion.rotation_matrix
 
         cos_angle = rotation_matrix[0, 0]
-        sin_angle = rotation_matrix[0, 1]
+        sin_angle = rotation_matrix[1, 0]
 
         point_0_x = self.center_x + self.length / 2 * cos_angle + self.width / 2 * sin_angle
         point_0_y = self.center_y + self.length / 2 * sin_angle - self.width / 2 * cos_angle

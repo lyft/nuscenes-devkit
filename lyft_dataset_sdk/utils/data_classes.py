@@ -570,35 +570,49 @@ class Box:
         """
         return self.orientation.rotation_matrix
 
-    def translate(self, x: (np.ndarray, List[float], Tuple[float])) -> None:
+    def translate(self, x: (np.ndarray, List[float], Tuple[float])):
         """Applies a translation.
 
         Args:
             x: <np.float: 3, 1>. Translation in x, y, z direction.
 
+        Returns: translated Box
+
         """
         self.center += x
 
-    def rotate_around_origin(self, quaternion: Quaternion) -> None:
+        return self
+
+    def rotate_around_origin(self, quaternion: Quaternion):
         """Rotates the box around (0, 0, 0).
 
         Args:
             quaternion: Rotation to apply.
 
-        """
-        self.center = np.dot(quaternion.rotation_matrix, self.center)
-        self.orientation = quaternion * self.orientation
-        self.velocity = np.dot(quaternion.rotation_matrix, self.velocity)
+        Returns: rotated box
 
-    def rotate_around_box_center(self, quaternion: Quaternion) -> None:
+        """
+        rotation_matrix = quaternion.rotation_matrix
+
+        self.center = np.dot(rotation_matrix, self.center)
+        self.orientation = quaternion * self.orientation
+        self.velocity = np.dot(rotation_matrix, self.velocity)
+
+        return self
+
+    def rotate_around_box_center(self, quaternion: Quaternion):
         """Rotates the box around it's center.
 
         Args:
             quaternion: Rotation to apply.
 
+        Returns: rotated box
+
         """
         self.orientation = quaternion * self.orientation
         self.velocity = np.dot(quaternion.rotation_matrix, self.velocity)
+
+        return self
 
     def corners(self, wlh_factor: float = 1.0) -> np.ndarray:
         """Returns the bounding box corners.
