@@ -277,16 +277,18 @@ class LyftDataset:
                 yaw = ypr[0]
 
                 box.translate(-np.array(pose_record["translation"]))
-                box.rotate(Quaternion(scalar=np.cos(yaw / 2), vector=[0, 0, np.sin(yaw / 2)]).inverse)
+                box.rotate_around_coordinate_center(
+                    Quaternion(scalar=np.cos(yaw / 2), vector=[0, 0, np.sin(yaw / 2)]).inverse
+                )
 
             else:
                 # Move box to ego vehicle coord system
                 box.translate(-np.array(pose_record["translation"]))
-                box.rotate(Quaternion(pose_record["rotation"]).inverse)
+                box.rotate_around_coordinate_center(Quaternion(pose_record["rotation"]).inverse)
 
                 #  Move box to sensor coord system
                 box.translate(-np.array(cs_record["translation"]))
-                box.rotate(Quaternion(cs_record["rotation"]).inverse)
+                box.rotate_around_coordinate_center(Quaternion(cs_record["rotation"]).inverse)
 
             if sensor_record["modality"] == "camera" and not box_in_image(
                 box, cam_intrinsic, imsize, vis_level=box_vis_level
@@ -487,7 +489,7 @@ class LyftDataset:
         nsweeps: int = 1,
         out_path: str = None,
         underlay_map: bool = False,
-    ) -> None:
+    ):
         return self.explorer.render_sample_data(
             sample_data_token,
             with_anns,
@@ -923,7 +925,7 @@ class LyftDatasetExplorer:
         ypr_rad = Quaternion(pose["rotation"]).yaw_pitch_roll
         yaw_deg = -math.degrees(ypr_rad[0])
 
-        rotated_cropped = np.array(Image.fromarray(cropped).rotate(yaw_deg))
+        rotated_cropped = np.array(Image.fromarray(cropped).rotate_around_coordinate_center(yaw_deg))
         ego_centric_map = crop_image(
             rotated_cropped, rotated_cropped.shape[1] / 2, rotated_cropped.shape[0] / 2, scaled_limit_px
         )
