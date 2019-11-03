@@ -3,17 +3,18 @@
 # Licensed under the Creative Commons [see licence.txt]
 # Modified by Vladimir Iglovikov 2019.
 
+import copy
 import struct
 from abc import ABC, abstractmethod
 from functools import reduce
+from pathlib import Path
 from typing import Tuple, List, Dict
-import copy
 
 import cv2
 import numpy as np
 from matplotlib.axes import Axes
 from pyquaternion import Quaternion
-from pathlib import Path
+
 from lyft_dataset_sdk.utils.geometry_utils import view_points, transform_matrix
 
 
@@ -27,23 +28,19 @@ class PointCloud(ABC):
     """
 
     def __init__(self, points: np.ndarray):
+        """Initialize a point cloud and check it has the correct dimensions.
+
+        Args:
+            points: <np.float: d, n>. d-dimensional input point cloud matrix.
         """
-        Initialize a point cloud and check it has the correct dimensions.
-        :param points: <np.float: d, n>. d-dimensional input point cloud matrix.
-        """
-        assert points.shape[0] == self.nbr_dims(), (
-            "Error: Pointcloud points must have format: %d x n" % self.nbr_dims()
-        )
+        if points.shape[0] != self.nbr_dims():
+            raise ValueError("Error: Pointcloud points must have format: {} x n".format(self.nbr_dims()))
         self.points = points
 
     @staticmethod
     @abstractmethod
     def nbr_dims() -> int:
-        """Returns the number of dimensions.
-
-        Returns: Number of dimensions.
-
-        """
+        """Returns the number of dimensions."""
         pass
 
     @classmethod
@@ -288,7 +285,6 @@ class LidarPointCloud(PointCloud):
 
 
 class RadarPointCloud(PointCloud):
-
     # Class-level settings for radar pointclouds, see from_file().
     invalid_states = [0]  # type: List[int]
     dynprop_states = range(7)  # type: List[int] # Use [0, 2, 6] for moving objects only.
@@ -476,12 +472,12 @@ class RadarPointCloud(PointCloud):
 
 
 class Box:
-    """ Simple data class representing a 3d box including, label, score and velocity. """
+    """Simple data class representing a 3d box including, label, score and velocity."""
 
     def __init__(
         self,
-        center: List[float],
-        size: List[float],
+        center: (List[float], Tuple[float]),
+        size: (List[float], Tuple[float]),
         orientation: Quaternion,
         label: int = np.nan,
         score: float = np.nan,
@@ -501,11 +497,20 @@ class Box:
             name: Box name, optional. Can be used e.g. for denote category name.
             token: Unique string identifier from DB.
         """
-        assert not np.any(np.isnan(center))
-        assert not np.any(np.isnan(size))
-        assert len(center) == 3
-        assert len(size) == 3
-        assert type(orientation) == Quaternion
+        if np.any(np.isnan(center)):
+            raise ValueError("Center coordinates should not have NaN values but we got {}".format(center))
+
+        if np.any(np.isnan(size)):
+            raise ValueError("Size values should not have NaN values but we got {}".format(size))
+
+        if len(center) != 3:
+            raise ValueError("Center should be defined by 3 numbers but we got {}".format(center))
+
+        if len(size) != 3:
+            raise ValueError("Size should be defined by 3 numbers but we got {}".format(size))
+
+        if not isinstance(orientation, Quaternion):
+            raise TypeError("The orientation should be a Quaternion but we got {}".format(type(orientation)))
 
         self.center = np.array(center)
         self.wlh = np.array(size)
@@ -516,7 +521,7 @@ class Box:
         self.name = name
         self.token = token
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         center = np.allclose(self.center, other.center)
         wlh = np.allclose(self.wlh, other.wlh)
         orientation = np.allclose(self.orientation.elements, other.orientation.elements)
@@ -565,25 +570,54 @@ class Box:
         """
         return self.orientation.rotation_matrix
 
-    def translate(self, x: np.ndarray) -> None:
+    def translate(self, x: (np.ndarray, List[float], Tuple[float])):
         """Applies a translation.
 
         Args:
             x: <np.float: 3, 1>. Translation in x, y, z direction.
 
+        Returns: translated Box
+
         """
         self.center += x
 
-    def rotate(self, quaternion: Quaternion) -> None:
-        """Rotates box.
+        return self
+
+    def rotate(self, **kwargs):
+        raise DeprecationWarning(
+            "rotate method is deprected. Use `rotate_around_origin` " "and `rotate_around_box_center` instead."
+        )
+
+    def rotate_around_origin(self, quaternion: Quaternion):
+        """Rotates the box around (0, 0, 0).
 
         Args:
             quaternion: Rotation to apply.
 
+        Returns: rotated box
+
         """
-        self.center = np.dot(quaternion.rotation_matrix, self.center)
+        rotation_matrix = quaternion.rotation_matrix
+
+        self.center = np.dot(rotation_matrix, self.center)
+        self.orientation = quaternion * self.orientation
+        self.velocity = np.dot(rotation_matrix, self.velocity)
+
+        return self
+
+    def rotate_around_box_center(self, quaternion: Quaternion):
+        """Rotates the box around it's center.
+
+        Args:
+            quaternion: Rotation to apply.
+
+        Returns: rotated box
+
+        """
         self.orientation = quaternion * self.orientation
         self.velocity = np.dot(quaternion.rotation_matrix, self.velocity)
+
+        return self
 
     def corners(self, wlh_factor: float = 1.0) -> np.ndarray:
         """Returns the bounding box corners.

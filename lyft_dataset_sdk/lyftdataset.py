@@ -16,8 +16,8 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import sklearn.metrics
-from matplotlib.axes import Axes
 from PIL import Image
+from matplotlib.axes import Axes
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
@@ -95,7 +95,7 @@ class LyftDataset:
         # Initialize LyftDatasetExplorer class
         self.explorer = LyftDatasetExplorer(self)
 
-    def __load_table__(self, table_name: str, verbose: bool = False, missing_ok: bool = False) -> dict:
+    def __load_table__(self, table_name: str, verbose: bool = False, missing_ok: bool = False):
         """Loads a table."""
         filepath = self.json_path / f"{table_name}.json"
 
@@ -277,16 +277,16 @@ class LyftDataset:
                 yaw = ypr[0]
 
                 box.translate(-np.array(pose_record["translation"]))
-                box.rotate(Quaternion(scalar=np.cos(yaw / 2), vector=[0, 0, np.sin(yaw / 2)]).inverse)
+                box.rotate_around_origin(Quaternion(scalar=np.cos(yaw / 2), vector=[0, 0, np.sin(yaw / 2)]).inverse)
 
             else:
                 # Move box to ego vehicle coord system
                 box.translate(-np.array(pose_record["translation"]))
-                box.rotate(Quaternion(pose_record["rotation"]).inverse)
+                box.rotate_around_origin(Quaternion(pose_record["rotation"]).inverse)
 
                 #  Move box to sensor coord system
                 box.translate(-np.array(cs_record["translation"]))
-                box.rotate(Quaternion(cs_record["rotation"]).inverse)
+                box.rotate_around_origin(Quaternion(cs_record["rotation"]).inverse)
 
             if sensor_record["modality"] == "camera" and not box_in_image(
                 box, cam_intrinsic, imsize, vis_level=box_vis_level
@@ -487,7 +487,7 @@ class LyftDataset:
         nsweeps: int = 1,
         out_path: str = None,
         underlay_map: bool = False,
-    ) -> None:
+    ):
         return self.explorer.render_sample_data(
             sample_data_token,
             with_anns,
@@ -746,7 +746,7 @@ class LyftDatasetExplorer:
             pc = LidarPointCloud.from_file(pcl_path)
         else:
             pc = RadarPointCloud.from_file(pcl_path)
-        im = Image.open(str(self.lyftd.data_path / cam["filename"]))
+        image = Image.open(str(self.lyftd.data_path / cam["filename"]))
 
         # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
         # First step: transform the point-cloud to the ego vehicle frame for the timestamp of the sweep.
@@ -783,13 +783,13 @@ class LyftDatasetExplorer:
         mask = np.ones(depths.shape[0], dtype=bool)
         mask = np.logical_and(mask, depths > 0)
         mask = np.logical_and(mask, points[0, :] > 1)
-        mask = np.logical_and(mask, points[0, :] < im.size[0] - 1)
+        mask = np.logical_and(mask, points[0, :] < image.size[0] - 1)
         mask = np.logical_and(mask, points[1, :] > 1)
-        mask = np.logical_and(mask, points[1, :] < im.size[1] - 1)
+        mask = np.logical_and(mask, points[1, :] < image.size[1] - 1)
         points = points[:, mask]
         coloring = coloring[mask]
 
-        return points, coloring, im
+        return points, coloring, image
 
     def render_pointcloud_in_image(
         self,
@@ -923,7 +923,7 @@ class LyftDatasetExplorer:
         ypr_rad = Quaternion(pose["rotation"]).yaw_pitch_roll
         yaw_deg = -math.degrees(ypr_rad[0])
 
-        rotated_cropped = np.array(Image.fromarray(cropped).rotate(yaw_deg))
+        rotated_cropped = np.array(Image.fromarray(cropped).rotate_around_origin(yaw_deg))
         ego_centric_map = crop_image(
             rotated_cropped, rotated_cropped.shape[1] / 2, rotated_cropped.shape[0] / 2, scaled_limit_px
         )
@@ -1354,8 +1354,11 @@ class LyftDatasetExplorer:
             "CAM_BACK_RIGHT",
         ]
 
-        assert image_size[0] / image_size[1] == 16 / 9, "Aspect ratio should be 16/9."
-        assert channel in valid_channels, f"Input channel {channel} not valid."
+        if image_size[0] / image_size[1] != 16 / 9:
+            raise ValueError("Aspect ratio should be 16/9.")
+
+        if channel not in valid_channels:
+            raise ValueError(f"Input channel {channel} not valid.")
 
         if out_path is not None:
             assert out_path.suffix == ".avi"
@@ -1389,7 +1392,8 @@ class LyftDatasetExplorer:
 
             # Load and render
             if not image_path.exists():
-                raise Exception("Error: Missing image %s" % image_path)
+                raise FileNotFoundError("Error: Missing image %s" % image_path)
+
             image = cv2.imread(str(image_path))
             for box in boxes:
                 c = self.get_color(box.name)
