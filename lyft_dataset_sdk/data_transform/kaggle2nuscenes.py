@@ -93,7 +93,8 @@ def main():
     joined_df["length"] = joined_df["length"].astype(float)
     joined_df["height"] = joined_df["height"].astype(float)
     joined_df["yaw"] = joined_df["yaw"].astype(float)
-    joined_df["score"] = joined_df["score"].astype(float)
+    if args.type == "pred":
+        joined_df["score"] = joined_df["score"].astype(float)
 
     joined_df["translation"] = joined_df.apply(lambda x: [x["center_x"], x["center_y"], x["center_z"]], 1)
     joined_df["size"] = joined_df.apply(lambda x: [x["width"], x["length"], x["height"]], 1)
