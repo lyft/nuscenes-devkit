@@ -1,7 +1,6 @@
 black
 cachetools>=3.1.0
 fire
-fire
 flake8
 matplotlib
 numpy>=1.14.5
