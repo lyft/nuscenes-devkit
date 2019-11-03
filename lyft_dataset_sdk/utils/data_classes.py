@@ -583,6 +583,11 @@ class Box:
 
         return self
 
+    def rotate(self, **kwargs):
+        raise DeprecationWarning(
+            "rotate method is deprected. Use `rotate_around_origin` " "and `rotate_around_box_center` instead."
+        )
+
     def rotate_around_origin(self, quaternion: Quaternion):
         """Rotates the box around (0, 0, 0).
 
