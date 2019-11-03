@@ -85,7 +85,7 @@ class KittiConverter:
         # Select subset of the data to look at.
         self.lyft_ds = LyftDataset(self.lyft_dataroot, self.table_folder)
 
-        self.kitti_to_nu_lidar = Quaternion(axis=(0, 0, 1), angle=np.pi / 2)
+        self.kitti_to_nu_lidar = Quaternion(axis=(0, 0, 1), angle=np.pi)
         self.kitti_to_nu_lidar_inv = self.kitti_to_nu_lidar.inverse
 
         # Get assignment of scenes to splits.
@@ -168,6 +168,8 @@ class KittiConverter:
             velo_to_cam_trans = velo_to_cam_kitti[:3, 3]
 
             # Check that the rotation has the same format as in KITTI.
+            expected_kitti_velo_to_cam_rot = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
+            assert (velo_to_cam_rot.round(0) == expected_kitti_velo_to_cam_rot).all(), velo_to_cam_rot.round(0)
             assert (velo_to_cam_trans[1:3] < 0).all()
 
             # Retrieve the token from the lidar.
