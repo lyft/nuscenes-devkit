@@ -36,12 +36,12 @@ class KittiDB:
         _tokens.sort()
         self.tokens = _tokens
 
-        # KITTI LIDAR has the x-axis pointing forward, but our LIDAR points to the right. So we need to apply a
-        # 90 degree rotation around to yaw (z-axis) in order to align.
+        # KITTI LIDAR has the x-axis pointing forward, but our LIDAR points backwards. So we need to apply a
+        # 180 degree rotation around to yaw (z-axis) in order to align.
         # The quaternions will be used a lot of time. We store them as instance variables so that we don't have
         # to create a new one every single time.
-        self.kitti_to_nu_lidar = Quaternion(axis=(0, 0, 1), angle=np.pi / 2)
-        self.kitti_to_nu_lidar_inv = Quaternion(axis=(0, 0, 1), angle=np.pi / 2).inverse
+        self.kitti_to_nu_lidar = Quaternion(axis=(0, 0, 1), angle=np.pi)
+        self.kitti_to_nu_lidar_inv = self.kitti_to_nu_lidar.inverse
 
     @staticmethod
     def parse_label_line(label_line) -> dict:
@@ -80,7 +80,7 @@ class KittiDB:
         velo_to_cam_rot: Quaternion,
         velo_to_cam_trans: np.ndarray,
         r0_rect: Quaternion,
-        kitti_to_nu_lidar_inv: Quaternion = Quaternion(axis=(0, 0, 1), angle=np.pi / 2).inverse,
+        kitti_to_nu_lidar_inv: Quaternion = Quaternion(axis=(0, 0, 1), angle=np.pi).inverse,
     ) -> Box:
         """Transform from nuScenes lidar frame to KITTI reference frame.
 
