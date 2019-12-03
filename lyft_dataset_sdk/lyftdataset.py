@@ -923,7 +923,7 @@ class LyftDatasetExplorer:
         ypr_rad = Quaternion(pose["rotation"]).yaw_pitch_roll
         yaw_deg = -math.degrees(ypr_rad[0])
 
-        rotated_cropped = np.array(Image.fromarray(cropped).rotate_around_origin(yaw_deg))
+        rotated_cropped = np.array(Image.fromarray(cropped).rotate(yaw_deg))
         ego_centric_map = crop_image(
             rotated_cropped, rotated_cropped.shape[1] / 2, rotated_cropped.shape[0] / 2, scaled_limit_px
         )
