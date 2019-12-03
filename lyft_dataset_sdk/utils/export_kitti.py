@@ -127,6 +127,7 @@ class KittiConverter:
         lidar_token = sample["data"][self.lidar_name]
         sd_record_lid = self.lyft_ds.get("sample_data", lidar_token)
         cs_record_lid = self.lyft_ds.get("calibrated_sensor", sd_record_lid["calibrated_sensor_token"])
+        ego_record_lid = self.lyft_ds.get("ego_pose", sd_record_lid["ego_pose_token"])
         for cam_name in self.cams_to_see:
             cam_front_token = sample["data"][cam_name]
             if self.get_all_detections:
@@ -137,6 +138,7 @@ class KittiConverter:
             # Retrieve sensor records.
             sd_record_cam = self.lyft_ds.get("sample_data", cam_front_token)
             cs_record_cam = self.lyft_ds.get("calibrated_sensor", sd_record_cam["calibrated_sensor_token"])
+            ego_record_cam = self.lyft_ds.get("ego_pose", sd_record_cam["ego_pose_token"])
             cam_height = sd_record_cam["height"]
             cam_width = sd_record_cam["width"]
             imsize = (cam_width, cam_height)
@@ -146,10 +148,16 @@ class KittiConverter:
             lid_to_ego = transform_matrix(
                 cs_record_lid["translation"], Quaternion(cs_record_lid["rotation"]), inverse=False
             )
+            lid_ego_to_world = transform_matrix(
+                ego_record_lid["translation"], Quaternion(ego_record_lid["rotation"]), inverse=False
+            )
+            world_to_cam_ego = transform_matrix(
+                ego_record_cam["translation"], Quaternion(ego_record_cam["rotation"]), inverse=True
+            )
             ego_to_cam = transform_matrix(
                 cs_record_cam["translation"], Quaternion(cs_record_cam["rotation"]), inverse=True
             )
-            velo_to_cam = np.dot(ego_to_cam, lid_to_ego)
+            velo_to_cam = np.dot(ego_to_cam, np.dot(world_to_cam_ego, np.dot(lid_ego_to_world, lid_to_ego)))
 
             # Convert from KITTI to nuScenes LIDAR coordinates, where we apply velo_to_cam.
             velo_to_cam_kitti = np.dot(velo_to_cam, self.kitti_to_nu_lidar.transformation_matrix)
@@ -171,7 +179,6 @@ class KittiConverter:
             if self.lyft_ds.get("sensor", cs_record_cam["sensor_token"])["channel"] == "CAM_FRONT":
                 expected_kitti_velo_to_cam_rot = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
                 assert (velo_to_cam_rot.round(0) == expected_kitti_velo_to_cam_rot).all(), velo_to_cam_rot.round(0)
-            assert (velo_to_cam_trans[1:3] < 0).all()
 
             # Retrieve the token from the lidar.
             # Note that this may be confusing as the filename of the camera will
