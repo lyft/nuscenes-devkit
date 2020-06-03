@@ -1458,7 +1458,7 @@ class LyftDatasetExplorer:
         """
 
         # Get logs by location
-        log_tokens = [l["token"] for l in self.lyftd.log if l["location"] == log_location]
+        log_tokens = [x["token"] for x in self.lyftd.log if x["location"] == log_location]
         assert len(log_tokens) > 0, "Error: This split has 0 scenes for location %s!" % log_location
 
         # Filter scenes
