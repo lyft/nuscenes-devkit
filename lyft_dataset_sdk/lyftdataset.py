@@ -82,7 +82,14 @@ class LyftDataset:
 
         # Initialize map mask for each map record.
         for map_record in self.map:
-            map_record["mask"] = MapMask(self.data_path / map_record["filename"], resolution=map_resolution)
+            if (self.data_path / map_record["filename"]).is_file():
+                map_record["mask"] = MapMask(self.data_path / map_record["filename"], resolution=map_resolution)
+            elif (self.data_path / "train_maps" / "map_raster_palo_alto.png").is_file():
+                map_record["mask"] = MapMask(
+                    self.data_path / "train_maps" / "map_raster_palo_alto.png", resolution=map_resolution
+                )
+            else:
+                raise FileNotFoundError("Could not file map file.")
 
         if verbose:
             for table in self.table_names:
@@ -124,7 +131,6 @@ class LyftDataset:
         self._token2ind = dict()
         for table in self.table_names:
             self._token2ind[table] = dict()
-
             for ind, member in enumerate(getattr(self, table)):
                 self._token2ind[table][member["token"]] = ind
 
@@ -257,10 +263,10 @@ class LyftDataset:
 
         if sensor_record["modality"] == "camera":
             cam_intrinsic = np.array(cs_record["camera_intrinsic"])
-            imsize = (sd_record["width"], sd_record["height"])
+            image_size = (sd_record["width"], sd_record["height"])
         else:
             cam_intrinsic = None
-            imsize = None
+            image_size = None
 
         # Retrieve all sample annotations and map to sensor coordinate system.
         if selected_anntokens is not None:
@@ -289,7 +295,7 @@ class LyftDataset:
                 box.rotate_around_origin(Quaternion(cs_record["rotation"]).inverse)
 
             if sensor_record["modality"] == "camera" and not box_in_image(
-                box, cam_intrinsic, imsize, vis_level=box_vis_level
+                box, cam_intrinsic, image_size, vis_level=box_vis_level
             ):
                 continue
 
@@ -865,7 +871,7 @@ class LyftDatasetExplorer:
             ax = axes[0, 0]
             for i, (_, sd_token) in enumerate(radar_data.items()):
                 self.render_sample_data(
-                    sd_token, with_anns=i == 0, box_vis_level=box_vis_level, ax=ax, num_sweeps=nsweeps
+                    sd_token, with_annotations=i == 0, box_vis_level=box_vis_level, ax=ax, num_sweeps=nsweeps
                 )
             ax.set_title("Fused RADARs")
 
@@ -934,7 +940,7 @@ class LyftDatasetExplorer:
     def render_sample_data(
         self,
         sample_data_token: str,
-        with_anns: bool = True,
+        with_annotations: bool = True,
         box_vis_level: BoxVisibility = BoxVisibility.ANY,
         axes_limit: float = 40,
         ax: Axes = None,
@@ -946,7 +952,7 @@ class LyftDatasetExplorer:
 
         Args:
             sample_data_token: Sample_data token.
-            with_anns: Whether to draw annotations.
+            with_annotations: Whether to draw annotations.
             box_vis_level: If sample_data is an image, this sets required visibility for boxes.
             axes_limit: Axes limit for lidar and radar (measured in meters).
             ax: Axes onto which to render.
@@ -1009,7 +1015,7 @@ class LyftDatasetExplorer:
             ax.plot(0, 0, "x", color="red")
 
             # Show boxes.
-            if with_anns:
+            if with_annotations:
                 for box in boxes:
                     c = np.array(self.get_color(box.name)) / 255.0
                     box.render(ax, view=np.eye(4), colors=(c, c, c))
@@ -1067,7 +1073,7 @@ class LyftDatasetExplorer:
             ax.plot(0, 0, "x", color="black")
 
             # Show boxes.
-            if with_anns:
+            if with_annotations:
                 for box in boxes:
                     c = np.array(self.get_color(box.name)) / 255.0
                     box.render(ax, view=np.eye(4), colors=(c, c, c))
@@ -1081,6 +1087,7 @@ class LyftDatasetExplorer:
             data_path, boxes, camera_intrinsic = self.lyftd.get_sample_data(
                 sample_data_token, box_vis_level=box_vis_level
             )
+
             data = Image.open(data_path)
 
             # Init axes.
@@ -1091,7 +1098,7 @@ class LyftDatasetExplorer:
             ax.imshow(data)
 
             # Show boxes.
-            if with_anns:
+            if with_annotations:
                 for box in boxes:
                     c = np.array(self.get_color(box.name)) / 255.0
                     box.render(ax, view=camera_intrinsic, normalize=True, colors=(c, c, c))
@@ -1135,7 +1142,9 @@ class LyftDatasetExplorer:
 
         ann_record = self.lyftd.get("sample_annotation", ann_token)
         sample_record = self.lyftd.get("sample", ann_record["sample_token"])
-        assert "LIDAR_TOP" in sample_record["data"].keys(), "No LIDAR_TOP in data, cant render"
+
+        if "LIDAR_TOP" not in sample_record["data"].keys():
+            raise KeyError("No LIDAR_TOP in data, cant render")
 
         fig, axes = plt.subplots(1, 2, figsize=(18, 9))
 
@@ -1449,7 +1458,7 @@ class LyftDatasetExplorer:
         """
 
         # Get logs by location
-        log_tokens = [l["token"] for l in self.lyftd.log if l["location"] == log_location]
+        log_tokens = [x["token"] for x in self.lyftd.log if x["location"] == log_location]
         assert len(log_tokens) > 0, "Error: This split has 0 scenes for location %s!" % log_location
 
         # Filter scenes

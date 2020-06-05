@@ -17,17 +17,17 @@ def get_inverse_q(q: Quaternion) -> Quaternion:
 
 @given(
     size=arrays(
-        np.float32,
+        np.float64,
         3,
         st.floats(min_value=1, max_value=100, exclude_min=True, allow_infinity=False, allow_nan=False, width=16),
     ),
     center=arrays(
-        np.float32,
+        np.float64,
         3,
         st.floats(min_value=-10, max_value=10, exclude_min=True, allow_infinity=False, allow_nan=False, width=32),
     ),
     translate=arrays(
-        np.float32,
+        np.float64,
         3,
         st.floats(min_value=-10, max_value=10, exclude_min=True, allow_infinity=False, allow_nan=False, width=32),
     ),
